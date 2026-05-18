@@ -1,0 +1,125 @@
+object RemainForm: TRemainForm
+  Left = 0
+  Top = 126
+  BorderStyle = bsDialog
+  Caption = #1053#1072#1089#1086#1089'. '#1064#1072#1075' '#1072#1074#1090#1086#1089#1090#1086#1087#1072'.'
+  ClientHeight = 171
+  ClientWidth = 334
+  Color = clCream
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Arial'
+  Font.Style = []
+  KeyPreview = True
+  Position = poDesigned
+  OnActivate = FormActivate
+  OnShow = FormShow
+  TextHeight = 14
+  object Label1: TLabel
+    Left = 79
+    Top = 10
+    Width = 179
+    Height = 19
+    Alignment = taCenter
+    AutoSize = False
+    Caption = #1064#1072#1075' '#1072#1074#1090#1086#1089#1090#1086#1087#1072', '#1084#1083
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+  end
+  object RemainEdit: TEdit
+    Left = 99
+    Top = 35
+    Width = 121
+    Height = 40
+    Alignment = taCenter
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -27
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 0
+    Text = '0'
+    OnKeyDown = RemainEditKeyDown
+    OnKeyPress = RemainEditKeyPress
+  end
+  object RemainOk: TBitBtn
+    Left = 32
+    Top = 126
+    Width = 75
+    Height = 25
+    Kind = bkOK
+    NumGlyphs = 2
+    TabOrder = 1
+  end
+  object RemainCancel: TBitBtn
+    Left = 224
+    Top = 126
+    Width = 75
+    Height = 25
+    Kind = bkCancel
+    NumGlyphs = 2
+    TabOrder = 2
+    OnClick = RemainCancelClick
+  end
+  object ButtonMinRemain: TButton
+    Left = 32
+    Top = 41
+    Width = 49
+    Height = 35
+    Caption = '0'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 3
+    OnClick = ButtonMinRemainClick
+  end
+  object ButtonMaxRemain: TButton
+    Left = 248
+    Top = 41
+    Width = 51
+    Height = 35
+    Caption = 'Max'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 4
+    OnClick = ButtonMaxRemainClick
+  end
+  object RemainTrackBar: TTrackBar
+    Left = 24
+    Top = 88
+    Width = 281
+    Height = 32
+    Margins.Left = 0
+    Margins.Right = 0
+    Max = 20000
+    PageSize = 100
+    Frequency = 1000
+    PositionToolTip = ptTop
+    TabOrder = 5
+    OnChange = RemainTrackBarChange
+  end
+  object UpDown1: TUpDown
+    Left = 220
+    Top = 35
+    Width = 17
+    Height = 40
+    Associate = RemainEdit
+    Max = 20000
+    Increment = 50
+    TabOrder = 6
+    Thousands = False
+  end
+end

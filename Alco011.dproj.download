@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.340,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\RegulatorB.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\Regulator.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.819,E:\Documents\Embarcadero\Studio\Projects\011\Info.dfm=E:\Documents\Embarcadero\Studio\Projects\011\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.976,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Alco010.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.628,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Sensor.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.773,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.100,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Help.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.736,=E:\Documents\Embarcadero\Studio\Projects\011\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.378,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\RegulatorB.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.512,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Rate.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.177,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Rate.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.129,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\MainSettings.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.100,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Help.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.116,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Regulator.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.581,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Rate.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.377,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Remain.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.527,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Remain.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.819,E:\Documents\Embarcadero\Studio\Projects\011\Info.pas=E:\Documents\Embarcadero\Studio\Projects\011\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.129,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\MainSettings.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.948,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Main.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.028,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.340,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\RegulatorB.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\Regulator.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.948,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Main.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.177,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Rate.dfm=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.304,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\011\Alco011.dproj=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Alco010.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.826,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.877,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.665,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.424,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.628,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Sensor.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.581,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Rate.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.116,C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Regulator.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.158,=C:\Users\Viktor\Documents\Embarcadero\Studio\Projects\010\Unit1.pas</Transaction>
+  </Transactions>
+	<BT_BuildType>Debug</BT_BuildType>
+</BorlandProject>

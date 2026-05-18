@@ -1,0 +1,122 @@
+object RateForm: TRateForm
+  Left = 0
+  Top = 0
+  BorderStyle = bsDialog
+  Caption = #1053#1072#1089#1086#1089'. '#1057#1082#1086#1088#1086#1089#1090#1100' '#1086#1090#1073#1086#1088#1072'.'
+  ClientHeight = 171
+  ClientWidth = 338
+  Color = clCream
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Arial'
+  Font.Style = []
+  KeyPreview = True
+  Position = poOwnerFormCenter
+  OnActivate = FormActivate
+  OnShow = FormShow
+  TextHeight = 14
+  object Label1: TLabel
+    Left = 79
+    Top = 10
+    Width = 179
+    Height = 19
+    Alignment = taCenter
+    AutoSize = False
+    Caption = #1057#1082#1086#1088#1086#1089#1090#1100' '#1086#1090#1073#1086#1088#1072' '#1084#1083'/'#1095#1072#1089
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+  end
+  object RateEdit: TEdit
+    Left = 117
+    Top = 40
+    Width = 89
+    Height = 40
+    Alignment = taCenter
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -27
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 0
+    Text = '0'
+    OnKeyDown = RateEditKeyDown
+    OnKeyPress = RateEditKeyPress
+  end
+  object RateOk: TBitBtn
+    Left = 32
+    Top = 126
+    Width = 75
+    Height = 25
+    Kind = bkOK
+    NumGlyphs = 2
+    TabOrder = 1
+  end
+  object RateCancel: TBitBtn
+    Left = 222
+    Top = 126
+    Width = 75
+    Height = 25
+    Kind = bkCancel
+    NumGlyphs = 2
+    TabOrder = 2
+  end
+  object ButtonMinRate: TButton
+    Left = 32
+    Top = 41
+    Width = 49
+    Height = 35
+    Caption = '0'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 3
+    OnClick = ButtonMinRateClick
+  end
+  object ButtonMaxRate: TButton
+    Left = 248
+    Top = 41
+    Width = 49
+    Height = 35
+    Caption = 'Max'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 4
+    OnClick = ButtonMaxRateClick
+  end
+  object RateTrackBar: TTrackBar
+    Left = 24
+    Top = 88
+    Width = 281
+    Height = 32
+    Max = 3600
+    PageSize = 100
+    Frequency = 100
+    PositionToolTip = ptTop
+    TabOrder = 5
+    OnChange = RateTrackBarChange
+  end
+  object UpDown1: TUpDown
+    Left = 206
+    Top = 40
+    Width = 17
+    Height = 40
+    Associate = RateEdit
+    Max = 3600
+    Increment = 10
+    TabOrder = 6
+    Thousands = False
+  end
+end
