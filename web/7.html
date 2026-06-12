@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PAC-RK Монитор v5</title>
+    <title>PAC-RK Монитор v6</title>
     <style>
         :root {
             --bg: #1e1e1e;
@@ -86,7 +86,6 @@
             flex-direction: column;
             min-height: 0;
         }
-        .chart-wrapper h4 { margin-bottom: 8px; font-size: 0.9em; color: var(--text-secondary); flex-shrink: 0; }
 
         .chart-top-bar {
             display: flex;
@@ -97,9 +96,6 @@
             margin-bottom: 4px;
             flex-shrink: 0;
         }
-        .chart-toggles { display: flex; gap: 12px; font-size: 0.8em; flex-wrap: wrap; align-items: center; }
-        .chart-toggles label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .chart-toggles input[type="color"] { width: 20px; height: 20px; border: none; background: none; cursor: pointer; }
         .range-info { font-size: 0.75em; color: var(--text-secondary); white-space: nowrap; }
         .time-btns { display: flex; gap: 3px; flex-wrap: wrap; }
         .time-btn {
@@ -112,6 +108,15 @@
             font-size: 0.7em;
         }
         .time-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .chart-settings-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+        }
 
         canvas {
             width: 100%;
@@ -140,7 +145,7 @@
 <body>
 
     <div class="header">
-        <div><div class="title">PAC-RK v5.0</div><div class="status">Режим: <strong>СТАБИЛИЗАЦИЯ</strong></div></div>
+        <div><div class="title">PAC-RK v6.0</div><div class="status">Режим: <strong>СТАБИЛИЗАЦИЯ</strong></div></div>
         <div><span class="connection-dot connected" id="connDot"></span><span style="font-size:0.85em">Online</span></div>
     </div>
 
@@ -164,14 +169,7 @@
         </div>
 
         <div class="chart-wrapper">
-            <h4>График температур</h4>
             <div class="chart-top-bar">
-                <div class="chart-toggles">
-                    <label><input type="checkbox" id="chk0" checked onchange="updateChartVisibility()"> T0</label><input type="color" id="col0" value="#4a9eff" onchange="updateChartColors()">
-                    <label><input type="checkbox" id="chk1" checked onchange="updateChartVisibility()"> T1</label><input type="color" id="col1" value="#4caf50" onchange="updateChartColors()">
-                    <label><input type="checkbox" id="chk2" onchange="updateChartVisibility()"> T2</label><input type="color" id="col2" value="#ffa500" onchange="updateChartColors()">
-                    <label><input type="checkbox" id="chk3" onchange="updateChartVisibility()"> T3</label><input type="color" id="col3" value="#e05555" onchange="updateChartColors()">
-                </div>
                 <div class="range-info">Мин. диапазон: <span id="rangeMin">76.0</span> · Макс. диапазон: <span id="rangeMax">79.0</span></div>
                 <div class="time-btns">
                     <button class="time-btn" onclick="setTimeScale(5)">5 мин</button>
@@ -185,6 +183,7 @@
                     <button class="time-btn" onclick="setTimeScale(240)">240 мин</button>
                     <button class="time-btn" onclick="setTimeScale(450)">450 мин</button>
                 </div>
+                <button class="chart-settings-btn" onclick="openChartSettingsModal()">⚙️ Настройка графиков</button>
             </div>
             <canvas id="tempCanvas"></canvas>
         </div>
@@ -249,6 +248,17 @@
             <div class="btn-row"><button class="btn secondary" onclick="closeDecrementModal()">Отмена</button><button class="btn" onclick="saveDecrement()">Сохранить</button></div>
         </div>
     </div>
+    <!-- Chart Settings Modal (New) -->
+    <div class="modal-overlay" id="chartSettingsModal">
+        <div class="modal">
+            <h3>Настройка графиков</h3>
+            <div class="row"><span>T0 · Голова</span><span><label><input type="checkbox" id="csChk0" checked> Видим</label> <input type="color" id="csCol0" value="#4a9eff"></span></div>
+            <div class="row"><span>T1 · 2/3 царги</span><span><label><input type="checkbox" id="csChk1" checked> Видим</label> <input type="color" id="csCol1" value="#4caf50"></span></div>
+            <div class="row"><span>T2 · Куб</span><span><label><input type="checkbox" id="csChk2"> Видим</label> <input type="color" id="csCol2" value="#ffa500"></span></div>
+            <div class="row"><span>T3 · Вода</span><span><label><input type="checkbox" id="csChk3"> Видим</label> <input type="color" id="csCol3" value="#e05555"></span></div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeChartSettingsModal()">Отмена</button><button class="btn" onclick="saveChartSettings()">Сохранить</button></div>
+        </div>
+    </div>
 
     <script>
         let demo = {
@@ -265,8 +275,8 @@
         };
 
         let canvas, ctx;
-        const colors = ['#4a9eff', '#4caf50', '#ffa500', '#e05555'];
-        const visible = [true, true, false, false];
+        let colors = ['#4a9eff', '#4caf50', '#ffa500', '#e05555'];
+        let visible = [true, true, false, false];
 
         function initChart() {
             canvas = document.getElementById('tempCanvas');
@@ -286,7 +296,6 @@
             const w = canvas.width, h = canvas.height;
             ctx.clearRect(0, 0, w, h);
 
-            // Find visible range
             let allVals = [];
             for (let s = 0; s < 4; s++) {
                 if (visible[s]) allVals = allVals.concat(demo.history[s]);
@@ -300,7 +309,6 @@
             document.getElementById('rangeMin').textContent = minVal.toFixed(1);
             document.getElementById('rangeMax').textContent = maxVal.toFixed(1);
 
-            // Grid
             ctx.strokeStyle = '#3a3a3a';
             ctx.lineWidth = 0.5;
             let gridStep = range <= 5 ? 0.5 : (range <= 15 ? 1 : 2);
@@ -314,7 +322,6 @@
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
             }
 
-            // Lines
             for (let s = 0; s < 4; s++) {
                 if (!visible[s]) continue;
                 let hh = demo.history[s];
@@ -331,27 +338,36 @@
             }
         }
 
-        function updateChartVisibility() {
-            visible[0] = document.getElementById('chk0').checked;
-            visible[1] = document.getElementById('chk1').checked;
-            visible[2] = document.getElementById('chk2').checked;
-            visible[3] = document.getElementById('chk3').checked;
-            drawChart();
-        }
-
-        function updateChartColors() {
-            colors[0] = document.getElementById('col0').value;
-            colors[1] = document.getElementById('col1').value;
-            colors[2] = document.getElementById('col2').value;
-            colors[3] = document.getElementById('col3').value;
-            drawChart();
-        }
-
         function setTimeScale(minutes) {
             demo.timeScale = minutes;
             demo.history = [[], [], [], []];
             document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
+        }
+
+        function openChartSettingsModal() {
+            document.getElementById('csChk0').checked = visible[0];
+            document.getElementById('csChk1').checked = visible[1];
+            document.getElementById('csChk2').checked = visible[2];
+            document.getElementById('csChk3').checked = visible[3];
+            document.getElementById('csCol0').value = colors[0];
+            document.getElementById('csCol1').value = colors[1];
+            document.getElementById('csCol2').value = colors[2];
+            document.getElementById('csCol3').value = colors[3];
+            document.getElementById('chartSettingsModal').classList.add('active');
+        }
+        function closeChartSettingsModal() { document.getElementById('chartSettingsModal').classList.remove('active'); }
+        function saveChartSettings() {
+            visible[0] = document.getElementById('csChk0').checked;
+            visible[1] = document.getElementById('csChk1').checked;
+            visible[2] = document.getElementById('csChk2').checked;
+            visible[3] = document.getElementById('csChk3').checked;
+            colors[0] = document.getElementById('csCol0').value;
+            colors[1] = document.getElementById('csCol1').value;
+            colors[2] = document.getElementById('csCol2').value;
+            colors[3] = document.getElementById('csCol3').value;
+            closeChartSettingsModal();
+            drawChart();
         }
 
         function updateUI() {
