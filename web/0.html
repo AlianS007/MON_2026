@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PAC-RK Monitor</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* ТЁМНАЯ ТЕМА (по умолчанию) */
+        body.dark { background: #1a1a2e; }
+        body.dark .app-container { background: #16213e; }
+        body.dark .left-panel, body.dark .center-panel, body.dark .right-panel { background: #16213e; }
+        body.dark .sensor-panel { background: #1a1a2e; border: 1px solid #2a2a4a; }
+        body.dark .sensor-header { background: #0f3460; color: #eee; font-size: 13px; }
+        body.dark .sensor-value-area { color: #eee; font-size: 28px; }
+        body.dark .sensor-bound { background: #1a1a2e; color: #aaa; border-top: 1px solid #2a2a4a; font-size: 12px; }
+        body.dark .info-block { background: #1a1a2e; border: 1px solid #2a2a4a; color: #ddd; }
+        body.dark .info-block-title { background: #0f3460; color: #eee; font-size: 13px; }
+        body.dark .info-block div { font-size: 13px; }
+        body.dark .mode-btn { background: #1a1a2e; border: 1px solid #2a2a4a; color: #ddd; font-size: 12px; }
+        body.dark .mode-btn.active { background: #0f3460; color: white; }
+        body.dark .control-btn, body.dark .pump-btn { background: #0f3460; border: 1px solid #2a2a4a; color: #eee; font-size: 13px; }
+        body.dark .time-btn { background: #1a1a2e; border: 1px solid #2a2a4a; color: #ddd; font-size: 9px; padding: 2px 5px; }
+        body.dark .time-btn.active { background: #0f3460; color: white; }
+        body.dark .theme-switch { background: #0f3460; color: #eee; border: 1px solid #2a2a4a; font-size: 13px; cursor: pointer; text-align: center; padding: 8px; border-radius: 6px; margin-top: 8px; }
+        body.dark .graph-container { background: #000000; border: 1px solid #2a2a4a; }
+        body.dark .graph-canvas canvas { background-color: #000000 !important; }
+        body.dark .chart-legend span { font-size: 11px; color: #ddd; }
+        body.dark .x-axis-panel { font-size: 11px; color: #aaa; border-top-color: #2a2a4a; }
+        body.dark .x-axis-labels span { font-size: 10px; color: #aaa; }
+        body.dark .modal-content { background: #16213e; border-color: #0f3460; }
+        body.dark .modal-header { background: #0f3460; color: #eee; }
+        body.dark .modal-body { color: #ddd; }
+        body.dark .modal-footer { background: #1a1a2e; border-color: #2a2a4a; }
+        body.dark .modal-footer button { background: #0f3460; border-color: #2a2a4a; color: #eee; }
+        body.dark .modal input, body.dark .modal select { background: #1a1a2e; border-color: #2a2a4a; color: #eee; }
+        body.dark .group-box { background: #1a1a2e; border-color: #2a2a4a; color: #ddd; }
+        body.dark .group-title { color: #66ccff; }
+        body.dark .preset-btn { background: #0f3460; border-color: #2a2a4a; color: #eee; }
+        body.dark .app-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 12px; text-align: center; padding: 8px; background: #0f3460; border-radius: 8px; color: #66ccff; text-shadow: 0 0 2px #000; }
+        body.dark .tab { background: #0f3460; color: #eee; border-bottom: 2px solid #2a2a4a; }
+        body.dark .tab.active { border-bottom-color: #66ccff; color: #66ccff; }
+
+        /* СВЕТЛАЯ ТЕМА */
+        body.light { background: #3a6ea5; }
+        body.light .app-container { background: #ece9d8; }
+        body.light .left-panel, body.light .center-panel, body.light .right-panel { background: #ece9d8; }
+        body.light .sensor-panel { background: #f5f3e8; border: 1px solid #aca899; }
+        body.light .sensor-header { background: #d4d0c0; font-size: 13px; }
+        body.light .sensor-value-area { font-size: 28px; }
+        body.light .sensor-bound { background: #e8e4d4; border-top: 1px solid #aca899; font-size: 12px; }
+        body.light .info-block { background: #f5f3e8; border: 1px solid #aca899; }
+        body.light .info-block-title { background: #d4d0c0; font-size: 13px; }
+        body.light .info-block div { font-size: 13px; }
+        body.light .mode-btn { background: #ece9d8; border: 1px solid #aca899; font-size: 12px; }
+        body.light .mode-btn.active { background: #0a2f4a; color: white; }
+        body.light .control-btn, body.light .pump-btn { background: #d4d0c0; border: 1px solid #aca899; color: #000; font-size: 13px; }
+        body.light .time-btn { background: #ece9d8; border: 1px solid #aca899; color: #000; font-size: 9px; padding: 2px 5px; }
+        body.light .time-btn.active { background: #0a2f4a; color: white; }
+        body.light .theme-switch { background: #d4d0c0; color: #000; border: 1px solid #aca899; font-size: 13px; cursor: pointer; text-align: center; padding: 8px; border-radius: 6px; margin-top: 8px; }
+        body.light .graph-container { background: #ffffff; border: 1px solid #aca899; }
+        body.light .graph-canvas canvas { background-color: #ffffff !important; }
+        body.light .chart-legend span { font-size: 11px; }
+        body.light .x-axis-panel { font-size: 11px; border-top-color: #aca899; }
+        body.light .x-axis-labels span { font-size: 10px; }
+        body.light .modal-content { background: #ece9d8; border-color: #0a2f4a; }
+        body.light .modal-header { background: #0a2f4a; color: white; }
+        body.light .modal-body { color: #000; }
+        body.light .modal-footer { background: #d4d0c0; border-color: #aca899; }
+        body.light .modal-footer button { background: #ece9d8; border-color: #aca899; color: #000; }
+        body.light .modal input, body.light .modal select { background: white; border-color: #aca899; color: #000; }
+        body.light .group-box { background: #f5f3e8; border-color: #aca899; color: #000; }
+        body.light .group-title { color: #0a2f4a; }
+        body.light .preset-btn { background: #e0dcd0; border-color: #aca899; color: #000; }
+        body.light .app-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 12px; text-align: center; padding: 8px; background: #d4d0c0; border-radius: 8px; color: #0a2f4a; }
+        body.light .tab { background: #d4d0c0; color: #000; border-bottom: 2px solid #aca899; }
+        body.light .tab.active { border-bottom-color: #0a2f4a; color: #0a2f4a; }
+
+        .app-container { display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
+
+        /* Десктопная версия (3 колонки) */
+        .desktop-layout { display: flex; flex: 1; gap: 2px; padding: 2px; overflow: hidden; }
+        .left-panel { width: 260px; flex-shrink: 0; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .center-panel { flex: 1; padding: 4px; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .right-panel { width: 230px; flex-shrink: 0; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+        /* Мобильная версия (табы) */
+        .mobile-layout { display: none; flex-direction: column; height: 100%; }
+        .tab-header { display: flex; background: inherit; }
+        .tab { flex: 1; text-align: center; padding: 12px 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .tab-content { flex: 1; overflow-y: auto; padding: 8px; }
+        .tab-content.hidden { display: none; }
+
+        .sensor-panel { border-radius: 6px; overflow: hidden; cursor: pointer; margin-bottom: 8px; }
+        .sensor-header { padding: 5px 8px; font-weight: bold; text-align: center; }
+        .sensor-value-area { padding: 10px; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; }
+        .sensor-bound { padding: 4px; text-align: center; border-top: 1px solid; }
+
+        .buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+        .control-btn { padding: 8px 6px; text-align: center; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px; border: 1px solid; }
+
+        .info-block { border-radius: 6px; margin-bottom: 8px; padding: 8px; }
+        .info-block-title { margin: -8px -8px 8px -8px; padding: 5px 8px; font-weight: bold; }
+        .info-block div { margin-bottom: 4px; }
+        .info-block strong { font-size: 14px; }
+
+        .mode-buttons { display: flex; gap: 4px; margin: 8px 0; }
+        .mode-btn { padding: 4px; text-align: center; cursor: pointer; border-radius: 4px; flex: 1; font-weight: bold; }
+
+        .pump-btn { padding: 8px 6px; text-align: center; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px; margin-top: 8px; border: 1px solid; }
+
+        .graphs-area { display: flex; flex-direction: column; gap: 4px; flex: 1; min-height: 0; }
+        .graph-container { border-radius: 4px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; transition: flex 0.2s ease; }
+        .graph-container.temps { flex: 3; }
+        .graph-container.pressure { flex: 1; }
+        .graph-container.hidden { display: none; }
+        .graph-wrapper { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+        .graph-canvas { flex: 1; min-height: 0; width: 100%; }
+        .graph-canvas canvas { width: 100%; height: 100%; }
+
+        .time-panel { position: absolute; top: 8px; right: 8px; z-index: 10; background: rgba(0,0,0,0.6); border-radius: 4px; padding: 2px 6px; }
+        .time-buttons { display: flex; flex-wrap: wrap; gap: 2px; }
+
+        .x-axis-panel { margin-top: 6px; padding: 4px 0 2px; text-align: center; border-top: 1px solid; height: 30px; overflow-x: auto; white-space: nowrap; }
+        .x-axis-labels { display: flex; justify-content: space-between; padding: 0 10px; }
+
+        .chart-legend { display: flex; justify-content: center; gap: 15px; margin-bottom: 4px; flex-wrap: wrap; }
+        .chart-legend span { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
+        .chart-legend input { width: 14px; height: 14px; margin: 0; cursor: pointer; }
+
+        .status-msg { font-weight: bold; font-size: 12px; color: #ff6666; }
+        body.light .status-msg { color: #aa2e2e; }
+        .demo-badge { background: #ff9f40; color: #1a1a2e; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 8px; }
+        body.light .demo-badge { background: #ffaa44; color: #1e1e2f; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { width: 90%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 8px; border: 2px solid; }
+        .modal-header { padding: 10px 12px; font-weight: bold; font-size: 14px; }
+        .modal-body { padding: 12px; font-size: 13px; }
+        .modal-footer { padding: 10px 12px; text-align: right; border-top: 1px solid; }
+        .modal-footer button { margin-left: 8px; padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 12px; border: 1px solid; }
+        .modal input, .modal select { width: 100%; padding: 6px; margin: 6px 0 8px 0; border-radius: 4px; font-size: 13px; border: 1px solid; }
+        .modal label { font-size: 13px; font-weight: bold; display: block; margin-top: 5px; }
+        .param-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .param-row label { margin-top: 0; min-width: 110px; font-size: 13px; }
+        .group-box { border: 1px solid; margin-bottom: 12px; padding: 8px; border-radius: 4px; }
+        .group-title { font-weight: bold; margin-bottom: 8px; font-size: 13px; }
+        .sensors-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 5px; }
+        .sensors-row label { font-weight: normal; display: inline; margin-top: 0; font-size: 13px; }
+        .inline-number { width: 70px; font-size: 13px; }
+        .preset-buttons { display: flex; gap: 5px; flex-wrap: wrap; margin: 8px 0; }
+        .preset-btn { padding: 3px 8px; cursor: pointer; border-radius: 3px; font-size: 12px; border: 1px solid; }
+        .compact-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .sound-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
+
+        /* Адаптация */
+        @media (max-width: 900px) {
+            .desktop-layout { display: none; }
+            .mobile-layout { display: flex; }
+            .graph-container.temps { min-height: 250px; }
+            .graph-container.pressure { min-height: 150px; }
+            .control-btn, .pump-btn { padding: 10px; font-size: 14px; }
+            .sensor-value-area { font-size: 22px; }
+        }
+
+        @media (min-width: 901px) {
+            .desktop-layout { display: flex; }
+            .mobile-layout { display: none; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dark">
+<div class="app-container">
+    <!-- ДЕСКТОПНАЯ ВЕРСИЯ -->
+    <div class="desktop-layout">
+        <div class="left-panel">
+            <div class="app-title">🍷 PAC-RK Monitor</div>
+            <div id="sensorsPanelDesktop"></div>
+            <div class="buttons-grid">
+                <button class="control-btn" id="btnRegulator">⚙️ Регулятор</button>
+                <button class="control-btn" id="btnRate">⚙️ Скорость</button>
+                <button class="control-btn" id="btnRemain">⚙️ Доза стопа</button>
+                <button class="control-btn" id="btnGeneralSettings">⚙️ Общие настройки</button>
+            </div>
+        </div>
+        <div class="center-panel">
+            <div class="graphs-area">
+                <div class="chart-legend">
+                    <span><input type="checkbox" id="legendT0" checked> <span style="color:#ff6384;">● T0</span></span>
+                    <span><input type="checkbox" id="legendT1" checked> <span style="color:#36a2eb;">● T1</span></span>
+                    <span><input type="checkbox" id="legendT2" checked> <span style="color:#ffce56;">● T2</span></span>
+                    <span><input type="checkbox" id="legendT3" checked> <span style="color:#4bc0c0;">● T3</span></span>
+                    <span><input type="checkbox" id="legendXGZP" checked> <span style="color:#ff9f40;">● XGZP</span></span>
+                    <span><input type="checkbox" id="legendAtmo" checked> <span style="color:#9966ff;">● Атм.</span></span>
+                </div>
+                <div class="graph-container temps" id="graphTemps"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartTemps"></canvas></div><div class="time-panel"><div class="time-buttons" id="timeButtons"></div></div></div></div>
+                <div class="graph-container pressure" id="graphXGZP"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartXGZP"></canvas></div></div></div>
+                <div class="graph-container pressure" id="graphAtmo"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartAtmo"></canvas></div></div></div>
+            </div>
+            <div class="x-axis-panel"><div class="x-axis-labels" id="xAxisLabels"></div></div>
+        </div>
+        <div class="right-panel">
+            <div class="info-block"><div class="info-block-title">⚡ Стабилизатор</div><div>Цель: <strong id="targetV">0.0</strong> В</div><div>Текущее: <strong id="measuredV">0.0</strong> В</div><div>Мощность: <strong id="powerCalc">0</strong> Вт</div><div class="mode-buttons" id="modeButtons"><div class="mode-btn" data-mode="0">Normal</div><div class="mode-btn" data-mode="1">Force</div><div class="mode-btn" data-mode="2">Stop</div></div></div>
+            <div class="info-block"><div class="info-block-title">⛽ Насос</div><div>Скорость: <strong id="rateVal">0</strong> мл/ч</div><div>Налито: <strong id="totalVal">0</strong> мл</div><div>Остаток: <strong id="remainVal">0</strong> мл</div><div>До стопа: <strong id="remainTime">0:00</strong></div><div class="pump-btn" id="pumpToggleBtn">▶️ Пуск</div></div>
+            <div class="info-block"><div class="info-block-title">📊 Давление</div><div>Атмосфера: <strong id="adVal">---</strong> мм рт.ст.</div><div>XGZP: <strong id="xgzpVal">---</strong> кПа</div><div>H₂O кип.: <strong id="boilH2O">---</strong> °C</div><div>Этанол: <strong id="boilOH">---</strong> °C</div></div>
+            <div class="info-block"><div class="info-block-title">🔔 События</div><div id="pacStatusMsg" class="status-msg">Нормальный режим <span class="demo-badge">ДЕМО</span></div></div>
+            <div class="theme-switch" id="themeSwitch">☀️ Светлая тема</div>
+        </div>
+    </div>
+
+    <!-- МОБИЛЬНАЯ ВЕРСИЯ (ТАБЫ) -->
+    <div class="mobile-layout">
+        <div class="tab-header">
+            <div class="tab active" data-tab="tab1">📊 Датчики</div>
+            <div class="tab" data-tab="tab2">📈 Графики</div>
+            <div class="tab" data-tab="tab3">⚙️ Управление</div>
+        </div>
+        <div class="tab-content" id="tab1">
+            <div id="sensorsPanelMobile"></div>
+            <div class="buttons-grid">
+                <button class="control-btn" id="btnRegulatorM">⚙️ Регулятор</button>
+                <button class="control-btn" id="btnRateM">⚙️ Скорость</button>
+                <button class="control-btn" id="btnRemainM">⚙️ Доза стопа</button>
+                <button class="control-btn" id="btnGeneralSettingsM">⚙️ Общие настройки</button>
+            </div>
+        </div>
+        <div class="tab-content hidden" id="tab2">
+            <div class="chart-legend">
+                <span><input type="checkbox" id="legendT0M" checked> <span style="color:#ff6384;">● T0</span></span>
+                <span><input type="checkbox" id="legendT1M" checked> <span style="color:#36a2eb;">● T1</span></span>
+                <span><input type="checkbox" id="legendT2M" checked> <span style="color:#ffce56;">● T2</span></span>
+                <span><input type="checkbox" id="legendT3M" checked> <span style="color:#4bc0c0;">● T3</span></span>
+                <span><input type="checkbox" id="legendXGZPM" checked> <span style="color:#ff9f40;">● XGZP</span></span>
+                <span><input type="checkbox" id="legendAtmoM" checked> <span style="color:#9966ff;">● Атм.</span></span>
+            </div>
+            <div class="graphs-area" style="flex:1">
+                <div class="graph-container temps" id="graphTempsM"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartTempsM"></canvas></div><div class="time-panel"><div class="time-buttons" id="timeButtonsM"></div></div></div></div>
+                <div class="graph-container pressure" id="graphXGZPM"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartXGZPM"></canvas></div></div></div>
+                <div class="graph-container pressure" id="graphAtmoM"><div class="graph-wrapper"><div class="graph-canvas"><canvas id="chartAtmoM"></canvas></div></div></div>
+            </div>
+            <div class="x-axis-panel"><div class="x-axis-labels" id="xAxisLabelsM"></div></div>
+        </div>
+        <div class="tab-content hidden" id="tab3">
+            <div id="rightPanelMobile"></div>
+            <div class="theme-switch" id="themeSwitchM">☀️ Светлая тема</div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНЫЕ ОКНА -->
+<div id="regulatorModal" class="modal"><div class="modal-content"><div class="modal-header">Регулятор / Стабилизация</div><div class="modal-body"><div class="param-row"><label>Целевое напряжение (В):</label><input type="number" id="modalTargetV" step="0.1" value="22.5"></div><div class="preset-buttons" id="modalPresets"></div><hr><div class="param-row"><label>Контроль разгона:</label><select id="forceControlSelect"><option value="0">Отключён</option><option value="1">Датчик T0</option><option value="2">Датчик T1</option><option value="3">Датчик T2</option><option value="4">Датчик T3</option></select></div><div class="param-row"><label>Порог разгона (°C/сек):</label><input type="number" id="forceBound" step="0.0625" value="0.5"></div></div><div class="modal-footer"><button id="regulatorApplyBtn">Применить</button><button id="regulatorCancelBtn">Отмена</button></div></div></div>
+<div id="rateModal" class="modal"><div class="modal-content"><div class="modal-header">Скорость отбора (мл/ч)</div><div class="modal-body"><div class="param-row"><input type="range" id="rateSlider" min="0" max="3600" step="100" style="flex:1"><span id="rateSliderVal" style="width:50px;text-align:center">600</span></div><div style="font-size:11px; text-align:center; margin-top:5px;">Alt+Z=0 | Alt+X=3600 | Alt+S=+100 | Alt+A=-100</div></div><div class="modal-footer"><button id="rateApplyBtn">Применить</button><button id="rateCancelBtn">Отмена</button></div></div></div>
+<div id="remainModal" class="modal"><div class="modal-content"><div class="modal-header">Доза автостопа (мл)</div><div class="modal-body"><div class="param-row"><input type="number" id="remainDose" step="100" style="flex:1"></div><div style="font-size:11px; text-align:center; margin-top:5px;">Alt+Z=0 | Alt+X=20000 | Alt+S=+500 | Alt+A=-500</div></div><div class="modal-footer"><button id="remainApplyBtn">Применить</button><button id="remainCancelBtn">Отмена</button></div></div></div>
+<div id="sensorModal" class="modal"><div class="modal-content"><div class="modal-header">Настройка датчика</div><div class="modal-body"><div class="param-row"><label style="width:70px">Датчик:</label><strong id="sensorNameLabel">T0</strong></div><div class="param-row"><label style="width:70px">Текущая:</label><span id="currentTempSensor">---</span> °C</div><div class="param-row"><label style="width:70px">Порог:</label><input type="number" id="thresholdVal" step="0.0625" style="width:100px"></div><div style="display: flex; gap: 5px; margin: 10px 0;"><button id="copyTplus125" style="flex:1">>>> +0.125</button><button id="incThreshold" style="flex:1">+0.0625</button><button id="decThreshold" style="flex:1">-0.0625</button></div><hr><label>Реакции:</label><div class="compact-row"><label><input type="checkbox" id="reactionEnable"> Включить реакцию</label></div><div class="compact-row"><label><input type="checkbox" id="reactionSound"> 🔊 Звук</label><label><input type="checkbox" id="reactionPumpStop"> ⏹️ Остановить насос</label><label><input type="checkbox" id="reactionHeaterOff"> 🔥 Выключить нагрев</label></div></div><div class="modal-footer"><button id="sensorApplyBtn">Сохранить</button><button id="sensorCancelBtn">Отмена</button></div></div></div>
+<div id="generalModal" class="modal"><div class="modal-content"><div class="modal-header">Общие настройки</div><div class="modal-body"><div class="group-box"><div class="group-title">📡 Получение и сохранение данных</div><div class="param-row"><label style="width:120px">Последовательный порт:</label><select id="comPortSelect"><option>COM1</option><option>COM2</option><option selected>COM3</option><option>COM4</option></select></div><div class="param-row"><label><input type="checkbox" id="saveDataCheckbox" checked> Сохранять данные в файл</label></div></div><div class="group-box"><div class="group-title">🎨 Отображение датчиков (окна слева)</div><div class="sensors-row"><label><input type="checkbox" id="showT0" checked> Датчик T0</label><label><input type="checkbox" id="showT1" checked> Датчик T1</label><label><input type="checkbox" id="showT2" checked> Датчик T2</label></div><div class="sensors-row"><label><input type="checkbox" id="showT3" checked> Датчик T3</label><label><input type="checkbox" id="showBMP" checked> Датчик BMP180</label><label><input type="checkbox" id="showXGZP" checked> Датчик XGZP6857</label></div></div><div class="group-box"><div class="group-title">🔥 Параметры нагревателя</div><div class="param-row"><label style="width:150px">Паспортная мощность (Вт):</label><input type="number" id="heaterPower" value="3000" class="inline-number"><span style="margin:0 5px">при</span><input type="number" id="heaterVoltage" value="230" class="inline-number"><span> В</span></div></div><div class="group-box"><div class="group-title">⚙️ Калибровка насоса</div><div class="param-row"><label style="width:160px">Шагов на 100 мл текущее:</label><span id="currentStepsDisplay">12500</span></div><div class="param-row"><label style="width:160px">Шагов на 100 мл желаемое:</label><input type="number" id="desiredSteps" value="12500" class="inline-number"></div><div class="param-row"><label><input type="checkbox" id="saveToEEPROM"> Записывать в EEPROM</label></div></div><div class="group-box"><div class="group-title">🔊 Настройка звуков</div><div class="sound-group"><label><input type="checkbox" id="soundLostConn" checked> Потеря связи</label><label><input type="checkbox" id="soundMaster" checked> Включить</label></div><div class="sound-group"><label><input type="checkbox" id="soundOverheat" checked> Перегрев</label><label><input type="checkbox" id="soundAutostop" checked> Автостоп</label></div></div></div><div class="modal-footer"><button id="generalApplyBtn">OK</button><button id="generalCancelBtn">Cancel</button></div></div></div>
+
+<script>
+    // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+    let currentSensorIdx = 0;
+    const sensorNames = ['T0 (пар)', 'T1 (2/3)', 'T2 (A)', 'T3 (B)'];
+    let charts = { temps: null, xgzp: null, atmo: null, tempsM: null, xgzpM: null, atmoM: null };
+    let chartData = { temps: { labels: [], t0: [], t1: [], t2: [], t3: [] }, xgzp: { labels: [], xgzp: [] }, atmo: { labels: [], ad: [] } };
+    let currentTheme = 'dark';
+
+    let mockData = {
+        temps: [82.4, 76.2, 68.5, 55.3], ad: 745.2, xgzp: 1.23, rate: 600, total: 2350, remain: 2650,
+        targetV: 22.5, measuredV: 22.3, stabMode: 0, dose: 5000, aFlags: 1, drivesStatus: 0,
+        heatControlStatus: 0, heatControlSensorNo: 0, heatControlValue: 8.0, overheat: false, autostopReached: false,
+        sensorBounds: [85.0, 85.0, 85.0, 85.0], reactionEnabled: [true, true, true, true],
+        heaterPower: 3000, heaterVoltage: 230, stepsFor100ml: 12500,
+        sensorVisible: [true, true, true, true], bmpVisible: true, xgzpVisible: true,
+        showGraphXGZP: true, showGraphAtmo: true,
+        showLineT0: true, showLineT1: true, showLineT2: true, showLineT3: true,
+        sensorColors: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
+    };
+
+    let currentTimeWindow = 600;
+    const timeList = [300, 600, 1200, 1800, 2700, 3600, 5400, 7200, 14400, 28800];
+    let activeModal = null;
+    const modals = { regulator: document.getElementById('regulatorModal'), rate: document.getElementById('rateModal'), remain: document.getElementById('remainModal'), sensor: document.getElementById('sensorModal'), general: document.getElementById('generalModal') };
+
+    // ========== ФУНКЦИЯ ДЛЯ ВЕРТИКАЛЬНОЙ СЕТКИ (основные линии толще, промежуточные тоньше) ==========
+    function updateVerticalGrid() {
+        const labelsCount = chartData.temps.labels.length;
+        // Шаг — сколько точек между основными линиями (примерно каждые 10 точек)
+        const step = Math.max(1, Math.floor(labelsCount / 10));
+
+        const gridConfig = {
+            color: function(context) {
+                const index = context.tick.value;
+                if (index % step === 0) return '#888888';  // основные линии — серые
+                return '#444444';  // промежуточные — темнее/светлее в зависимости от темы
+            },
+            lineWidth: function(context) {
+                const index = context.tick.value;
+                if (index % step === 0) return 1.2;   // основные линии — толщина 1.2px
+                return 0.5;                           // промежуточные — толщина 0.5px
+            },
+            drawOnChartArea: true,
+            drawTicks: false
+        };
+
+        const chartKeys = ['temps', 'xgzp', 'atmo', 'tempsM', 'xgzpM', 'atmoM'];
+        for (let key of chartKeys) {
+            if (charts[key]) {
+                charts[key].options.scales.x.grid = gridConfig;
+                charts[key].update();
+            }
+        }
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function openModal(name) { modals[name].style.display = 'flex'; activeModal = name; }
+    function closeModal(name) { modals[name].style.display = 'none'; activeModal = null; }
+    window.onclick = (e) => { for (let m in modals) if (e.target === modals[m]) modals[m].style.display = 'none'; };
+
+    // ========== ОБНОВЛЕНИЕ UI (ДЕСКТОП + МОБИЛЬНЫЕ ДУБЛИКАТЫ) ==========
+    function updateAllUI() {
+        // Обновляем датчики на десктопе
+        const panelDesktop = document.getElementById('sensorsPanelDesktop');
+        if (panelDesktop) {
+            panelDesktop.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                if (!mockData.sensorVisible[i]) continue;
+                const div = document.createElement('div');
+                div.className = 'sensor-panel';
+                div.innerHTML = `<div class="sensor-header">${sensorNames[i]}</div><div class="sensor-value-area" id="tempVal${i}" style="color:${mockData.sensorColors[i]}">${mockData.temps[i].toFixed(2)}°C</div><div class="sensor-bound" id="boundVal${i}">Порог: ${mockData.sensorBounds[i].toFixed(2)}°C</div>`;
+                div.onclick = () => { currentSensorIdx = i; document.getElementById('sensorNameLabel').innerText = sensorNames[i]; document.getElementById('thresholdVal').value = mockData.sensorBounds[i]; document.getElementById('currentTempSensor').innerText = mockData.temps[i].toFixed(2); openModal('sensor'); };
+                panelDesktop.appendChild(div);
+            }
+        }
+
+        // Обновляем датчики на мобильной версии
+        const panelMobile = document.getElementById('sensorsPanelMobile');
+        if (panelMobile) {
+            panelMobile.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                if (!mockData.sensorVisible[i]) continue;
+                const div = document.createElement('div');
+                div.className = 'sensor-panel';
+                div.innerHTML = `<div class="sensor-header">${sensorNames[i]}</div><div class="sensor-value-area" id="tempValM${i}" style="color:${mockData.sensorColors[i]}">${mockData.temps[i].toFixed(2)}°C</div><div class="sensor-bound" id="boundValM${i}">Порог: ${mockData.sensorBounds[i].toFixed(2)}°C</div>`;
+                div.onclick = () => { currentSensorIdx = i; document.getElementById('sensorNameLabel').innerText = sensorNames[i]; document.getElementById('thresholdVal').value = mockData.sensorBounds[i]; document.getElementById('currentTempSensor').innerText = mockData.temps[i].toFixed(2); openModal('sensor'); };
+                panelMobile.appendChild(div);
+            }
+        }
+
+        // Обновляем правую панель на мобильной версии
+        const rightPanelMobile = document.getElementById('rightPanelMobile');
+        if (rightPanelMobile) {
+            const atmo = mockData.ad;
+            const H2O = (1 / ((1/373.15) - (461.5/2257000) * Math.log(atmo/760))) - 273.15;
+            const OH = (1 / ((1/351.3) - (180.74/850000) * Math.log(atmo/760))) - 273.15;
+            let remainSec = mockData.rate > 0 ? (mockData.remain / mockData.rate * 3600) : 0;
+            let hrs = Math.floor(remainSec / 3600);
+            let mins = Math.floor((remainSec % 3600) / 60);
+            let power = Math.round(Math.pow(mockData.measuredV / mockData.heaterVoltage, 2) * mockData.heaterPower);
+            let statusMsg = '';
+            if (mockData.overheat) statusMsg = '🔥 ПЕРЕГРЕВ! Нагрев отключён';
+            else if (mockData.autostopReached) statusMsg = '🛑 АВТОСТОП! Достигнут объём';
+            else if ((mockData.aFlags & 1) === 0) statusMsg = '⏸️ Отбор остановлен оператором';
+            else if (mockData.drivesStatus !== 0) { let sensors = []; for (let i = 0; i < 4; i++) if (mockData.drivesStatus & (1 << i)) sensors.push(i); statusMsg = `⚠️ Сработал(и) датчик(и): ${sensors.join(', ')}`; }
+            else statusMsg = '✅ Нормальный режим';
+
+            rightPanelMobile.innerHTML = `
+                <div class="info-block"><div class="info-block-title">⚡ Стабилизатор</div><div>Цель: <strong>${mockData.targetV.toFixed(1)}</strong> В</div><div>Текущее: <strong>${mockData.measuredV.toFixed(1)}</strong> В</div><div>Мощность: <strong>${power}</strong> Вт</div><div class="mode-buttons" id="modeButtonsM"><div class="mode-btn" data-mode="0">Normal</div><div class="mode-btn" data-mode="1">Force</div><div class="mode-btn" data-mode="2">Stop</div></div></div>
+                <div class="info-block"><div class="info-block-title">⛽ Насос</div><div>Скорость: <strong>${mockData.rate}</strong> мл/ч</div><div>Налито: <strong>${Math.floor(mockData.total)}</strong> мл</div><div>Остаток: <strong>${Math.floor(mockData.remain)}</strong> мл</div><div>До стопа: <strong>${hrs}:${mins.toString().padStart(2, '0')}</strong></div><div class="pump-btn" id="pumpToggleBtnM">▶️ Пуск</div></div>
+                <div class="info-block"><div class="info-block-title">📊 Давление</div><div>Атмосфера: <strong>${mockData.ad.toFixed(1)}</strong> мм рт.ст.</div><div>XGZP: <strong>${mockData.xgzp.toFixed(2)}</strong> кПа</div><div>H₂O кип.: <strong>${H2O.toFixed(2)}</strong> °C</div><div>Этанол: <strong>${OH.toFixed(2)}</strong> °C</div></div>
+                <div class="info-block"><div class="info-block-title">🔔 События</div><div class="status-msg">${statusMsg} <span class="demo-badge">ДЕМО</span></div></div>
+            `;
+            // Назначаем события для мобильных кнопок режимов
+            document.querySelectorAll('#modeButtonsM .mode-btn').forEach(btn => {
+                btn.onclick = () => { mockData.stabMode = parseInt(btn.dataset.mode); updateAllUI(); updateChartVisibility(); };
+            });
+            document.getElementById('pumpToggleBtnM').onclick = () => { if (mockData.aFlags & 1) mockData.aFlags &= 0xFE; else mockData.aFlags |= 1; updateAllUI(); };
+        }
+
+        // Обновляем десктопные значения
+        const atmo = mockData.ad;
+        const H2O = (1 / ((1/373.15) - (461.5/2257000) * Math.log(atmo/760))) - 273.15;
+        const OH = (1 / ((1/351.3) - (180.74/850000) * Math.log(atmo/760))) - 273.15;
+        let remainSec = mockData.rate > 0 ? (mockData.remain / mockData.rate * 3600) : 0;
+        let hrs = Math.floor(remainSec / 3600);
+        let mins = Math.floor((remainSec % 3600) / 60);
+        let power = Math.round(Math.pow(mockData.measuredV / mockData.heaterVoltage, 2) * mockData.heaterPower);
+
+        document.getElementById('adVal') && (document.getElementById('adVal').innerText = mockData.ad.toFixed(1));
+        document.getElementById('xgzpVal') && (document.getElementById('xgzpVal').innerText = mockData.xgzp.toFixed(2));
+        document.getElementById('boilH2O') && (document.getElementById('boilH2O').innerText = H2O.toFixed(2));
+        document.getElementById('boilOH') && (document.getElementById('boilOH').innerText = OH.toFixed(2));
+        document.getElementById('rateVal') && (document.getElementById('rateVal').innerText = mockData.rate);
+        document.getElementById('totalVal') && (document.getElementById('totalVal').innerText = Math.floor(mockData.total));
+        document.getElementById('remainVal') && (document.getElementById('remainVal').innerText = Math.floor(mockData.remain));
+        document.getElementById('remainTime') && (document.getElementById('remainTime').innerHTML = `${hrs}:${mins.toString().padStart(2, '0')}`);
+        document.getElementById('targetV') && (document.getElementById('targetV').innerHTML = mockData.targetV.toFixed(1));
+        document.getElementById('measuredV') && (document.getElementById('measuredV').innerHTML = mockData.measuredV.toFixed(1));
+        document.getElementById('powerCalc') && (document.getElementById('powerCalc').innerHTML = power);
+        document.getElementById('currentStepsDisplay') && (document.getElementById('currentStepsDisplay').innerText = mockData.stepsFor100ml);
+
+        let statusMsg = '';
+        if (mockData.overheat) statusMsg = '🔥 ПЕРЕГРЕВ! Нагрев отключён';
+        else if (mockData.autostopReached) statusMsg = '🛑 АВТОСТОП! Достигнут объём';
+        else if ((mockData.aFlags & 1) === 0) statusMsg = '⏸️ Отбор остановлен оператором';
+        else if (mockData.drivesStatus !== 0) { let sensors = []; for (let i = 0; i < 4; i++) if (mockData.drivesStatus & (1 << i)) sensors.push(i); statusMsg = `⚠️ Сработал(и) датчик(и): ${sensors.join(', ')}`; }
+        else statusMsg = '✅ Нормальный режим';
+        document.getElementById('pacStatusMsg') && (document.getElementById('pacStatusMsg').innerHTML = statusMsg + ' <span class="demo-badge">ДЕМО</span>');
+
+        // Обновляем режимы стабилизации на десктопе
+        document.querySelectorAll('#modeButtons .mode-btn').forEach(btn => {
+            if (parseInt(btn.dataset.mode) === mockData.stabMode) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    // ========== УПРАВЛЕНИЕ ГРАФИКАМИ ==========
+    function updateChartVisibility() {
+        if (charts.temps) {
+            charts.temps.data.datasets[0].hidden = !mockData.showLineT0;
+            charts.temps.data.datasets[1].hidden = !mockData.showLineT1;
+            charts.temps.data.datasets[2].hidden = !mockData.showLineT2;
+            charts.temps.data.datasets[3].hidden = !mockData.showLineT3;
+            charts.temps.update();
+        }
+        if (charts.tempsM) {
+            charts.tempsM.data.datasets[0].hidden = !mockData.showLineT0;
+            charts.tempsM.data.datasets[1].hidden = !mockData.showLineT1;
+            charts.tempsM.data.datasets[2].hidden = !mockData.showLineT2;
+            charts.tempsM.data.datasets[3].hidden = !mockData.showLineT3;
+            charts.tempsM.update();
+        }
+        const graphXGZP = document.getElementById('graphXGZP');
+        const graphAtmo = document.getElementById('graphAtmo');
+        const graphXGZPM = document.getElementById('graphXGZPM');
+        const graphAtmoM = document.getElementById('graphAtmoM');
+        if (graphXGZP) graphXGZP.classList.toggle('hidden', !mockData.showGraphXGZP);
+        if (graphAtmo) graphAtmo.classList.toggle('hidden', !mockData.showGraphAtmo);
+        if (graphXGZPM) graphXGZPM.classList.toggle('hidden', !mockData.showGraphXGZP);
+        if (graphAtmoM) graphAtmoM.classList.toggle('hidden', !mockData.showGraphAtmo);
+
+        document.getElementById('legendT0').checked = mockData.showLineT0;
+        document.getElementById('legendT1').checked = mockData.showLineT1;
+        document.getElementById('legendT2').checked = mockData.showLineT2;
+        document.getElementById('legendT3').checked = mockData.showLineT3;
+        document.getElementById('legendXGZP').checked = mockData.showGraphXGZP;
+        document.getElementById('legendAtmo').checked = mockData.showGraphAtmo;
+        document.getElementById('legendT0M') && (document.getElementById('legendT0M').checked = mockData.showLineT0);
+        document.getElementById('legendT1M') && (document.getElementById('legendT1M').checked = mockData.showLineT1);
+        document.getElementById('legendT2M') && (document.getElementById('legendT2M').checked = mockData.showLineT2);
+        document.getElementById('legendT3M') && (document.getElementById('legendT3M').checked = mockData.showLineT3);
+        document.getElementById('legendXGZPM') && (document.getElementById('legendXGZPM').checked = mockData.showGraphXGZP);
+        document.getElementById('legendAtmoM') && (document.getElementById('legendAtmoM').checked = mockData.showGraphAtmo);
+
+        updateVerticalGrid();
+    }
+
+    function updateXAxisLabels() {
+        const labels = chartData.temps.labels;
+        const container = document.getElementById('xAxisLabels');
+        const containerM = document.getElementById('xAxisLabelsM');
+        if (container) {
+            if (labels.length === 0) { container.innerHTML = '<span>Время</span>'; return; }
+            const step = Math.max(1, Math.floor(labels.length / 10));
+            let html = '';
+            for (let i = 0; i < labels.length; i += step) html += `<span>${labels[i]}</span>`;
+            if (labels.length - 1 >= 0 && (labels.length - 1) % step !== 0) html += `<span>${labels[labels.length - 1]}</span>`;
+            container.innerHTML = html;
+        }
+        if (containerM) {
+            if (labels.length === 0) { containerM.innerHTML = '<span>Время</span>'; return; }
+            const step = Math.max(1, Math.floor(labels.length / 10));
+            let html = '';
+            for (let i = 0; i < labels.length; i += step) html += `<span>${labels[i]}</span>`;
+            if (labels.length - 1 >= 0 && (labels.length - 1) % step !== 0) html += `<span>${labels[labels.length - 1]}</span>`;
+            containerM.innerHTML = html;
+        }
+    }
+
+    function addGraphPoint() {
+        const time = new Date().toLocaleTimeString();
+        chartData.temps.labels.push(time);
+        chartData.temps.t0.push(mockData.temps[0]);
+        chartData.temps.t1.push(mockData.temps[1]);
+        chartData.temps.t2.push(mockData.temps[2]);
+        chartData.temps.t3.push(mockData.temps[3]);
+        chartData.xgzp.labels.push(time);
+        chartData.xgzp.xgzp.push(mockData.xgzp);
+        chartData.atmo.labels.push(time);
+        chartData.atmo.ad.push(mockData.ad);
+        const maxPoints = Math.max(30, currentTimeWindow / 10);
+        if (chartData.temps.labels.length > maxPoints) {
+            chartData.temps.labels.shift(); chartData.temps.t0.shift(); chartData.temps.t1.shift(); chartData.temps.t2.shift(); chartData.temps.t3.shift();
+            chartData.xgzp.labels.shift(); chartData.xgzp.xgzp.shift();
+            chartData.atmo.labels.shift(); chartData.atmo.ad.shift();
+        }
+        updateAllCharts();
+        updateXAxisLabels();
+    }
+
+    function updateAllCharts() {
+        if (charts.temps) {
+            charts.temps.data.labels = chartData.temps.labels;
+            charts.temps.data.datasets[0].data = chartData.temps.t0;
+            charts.temps.data.datasets[1].data = chartData.temps.t1;
+            charts.temps.data.datasets[2].data = chartData.temps.t2;
+            charts.temps.data.datasets[3].data = chartData.temps.t3;
+            charts.temps.update();
+        }
+        if (charts.tempsM) {
+            charts.tempsM.data.labels = chartData.temps.labels;
+            charts.tempsM.data.datasets[0].data = chartData.temps.t0;
+            charts.tempsM.data.datasets[1].data = chartData.temps.t1;
+            charts.tempsM.data.datasets[2].data = chartData.temps.t2;
+            charts.tempsM.data.datasets[3].data = chartData.temps.t3;
+            charts.tempsM.update();
+        }
+        if (charts.xgzp) { charts.xgzp.data.labels = chartData.xgzp.labels; charts.xgzp.data.datasets[0].data = chartData.xgzp.xgzp; charts.xgzp.update(); }
+        if (charts.xgzpM) { charts.xgzpM.data.labels = chartData.xgzp.labels; charts.xgzpM.data.datasets[0].data = chartData.xgzp.xgzp; charts.xgzpM.update(); }
+        if (charts.atmo) { charts.atmo.data.labels = chartData.atmo.labels; charts.atmo.data.datasets[0].data = chartData.atmo.ad; charts.atmo.update(); }
+        if (charts.atmoM) { charts.atmoM.data.labels = chartData.atmo.labels; charts.atmoM.data.datasets[0].data = chartData.atmo.ad; charts.atmoM.update(); }
+        updateVerticalGrid();
+    }
+
+    function setTimeWindow(seconds) {
+        currentTimeWindow = seconds;
+        document.querySelectorAll('.time-btn').forEach(btn => {
+            if (parseInt(btn.dataset.sec) === seconds) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        chartData = { temps: { labels: [], t0: [], t1: [], t2: [], t3: [] }, xgzp: { labels: [], xgzp: [] }, atmo: { labels: [], ad: [] } };
+        for (let i = 0; i < Math.min(30, currentTimeWindow / 10); i++) addGraphPoint();
+    }
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ГРАФИКОВ ==========
+    function initCharts() {
+        const isLight = currentTheme === 'light';
+        const gridColor = isLight ? '#cccccc' : '#333333';
+        const textColor = isLight ? '#000000' : '#ffffff';
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { display: true, ticks: { display: false }, grid: { color: '#888888', lineWidth: 1, drawOnChartArea: true, drawTicks: false } },
+                y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor, lineWidth: 0.5 }, title: { display: true, color: textColor, font: { size: 10 } } }
+            },
+            plugins: { legend: { display: false } }
+        };
+
+        // Десктопные графики
+        const ctxTemps = document.getElementById('chartTemps')?.getContext('2d');
+        if (ctxTemps) {
+            charts.temps = new Chart(ctxTemps, {
+                type: 'line', data: { labels: [], datasets: [
+                    { label: 'T0', borderColor: '#ff6384', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T1', borderColor: '#36a2eb', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T2', borderColor: '#ffce56', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T3', borderColor: '#4bc0c0', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }
+                ] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: '°C' } } } }
+            });
+        }
+        const ctxXGZP = document.getElementById('chartXGZP')?.getContext('2d');
+        if (ctxXGZP) charts.xgzp = new Chart(ctxXGZP, { type: 'line', data: { labels: [], datasets: [{ label: 'XGZP', borderColor: '#ff9f40', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: 'кПа', color: '#ff9f40' } } } } });
+        const ctxAtmo = document.getElementById('chartAtmo')?.getContext('2d');
+        if (ctxAtmo) charts.atmo = new Chart(ctxAtmo, { type: 'line', data: { labels: [], datasets: [{ label: 'Атмосфера', borderColor: '#9966ff', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: 'мм рт.ст.', color: '#9966ff' } } } } });
+
+        // Мобильные графики
+        const ctxTempsM = document.getElementById('chartTempsM')?.getContext('2d');
+        if (ctxTempsM) {
+            charts.tempsM = new Chart(ctxTempsM, {
+                type: 'line', data: { labels: [], datasets: [
+                    { label: 'T0', borderColor: '#ff6384', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T1', borderColor: '#36a2eb', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T2', borderColor: '#ffce56', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'T3', borderColor: '#4bc0c0', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }
+                ] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: '°C' } } } }
+            });
+        }
+        const ctxXGZPM = document.getElementById('chartXGZPM')?.getContext('2d');
+        if (ctxXGZPM) charts.xgzpM = new Chart(ctxXGZPM, { type: 'line', data: { labels: [], datasets: [{ label: 'XGZP', borderColor: '#ff9f40', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: 'кПа', color: '#ff9f40' } } } } });
+        const ctxAtmoM = document.getElementById('chartAtmoM')?.getContext('2d');
+        if (ctxAtmoM) charts.atmoM = new Chart(ctxAtmoM, { type: 'line', data: { labels: [], datasets: [{ label: 'Атмосфера', borderColor: '#9966ff', data: [], tension: 0.2, borderWidth: 2, pointRadius: 0 }] }, options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { ...commonOptions.scales.y.title, text: 'мм рт.ст.', color: '#9966ff' } } } } });
+
+        updateVerticalGrid();
+    }
+
+    // ========== НАСТРОЙКИ И СОБЫТИЯ ==========
+    function setTheme(theme) {
+        currentTheme = theme;
+        document.body.className = theme;
+        const isLight = theme === 'light';
+        const gridColor = isLight ? '#cccccc' : '#333333';
+        const textColor = isLight ? '#000000' : '#ffffff';
+        for (let key in charts) {
+            if (charts[key]) {
+                charts[key].options.scales.y.ticks.color = textColor;
+                charts[key].options.scales.y.grid.color = gridColor;
+                if (charts[key].options.scales.y.title) charts[key].options.scales.y.title.color = textColor;
+                charts[key].update();
+            }
+        }
+        const themeSwitch = document.getElementById('themeSwitch');
+        const themeSwitchM = document.getElementById('themeSwitchM');
+        if (themeSwitch) themeSwitch.innerHTML = theme === 'dark' ? '☀️ Светлая тема' : '🌙 Тёмная тема';
+        if (themeSwitchM) themeSwitchM.innerHTML = theme === 'dark' ? '☀️ Светлая тема' : '🌙 Тёмная тема';
+        updateVerticalGrid();
+    }
+    function toggleTheme() { setTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+
+    function initEvents() {
+        document.getElementById('regulatorApplyBtn').onclick = () => { mockData.targetV = parseFloat(document.getElementById('modalTargetV').value); let fc = parseInt(document.getElementById('forceControlSelect').value); let bound = parseFloat(document.getElementById('forceBound').value); if (fc > 0) { mockData.heatControlStatus = 1; mockData.heatControlSensorNo = fc - 1; mockData.heatControlValue = bound * 16; } else { mockData.heatControlStatus = 0; } closeModal('regulator'); updateAllUI(); };
+        document.getElementById('regulatorCancelBtn').onclick = () => closeModal('regulator');
+        document.getElementById('rateApplyBtn').onclick = () => { mockData.rate = parseInt(document.getElementById('rateSlider').value); closeModal('rate'); updateAllUI(); };
+        document.getElementById('rateCancelBtn').onclick = () => closeModal('rate');
+        document.getElementById('remainApplyBtn').onclick = () => { let nd = parseInt(document.getElementById('remainDose').value); mockData.dose = nd; if (mockData.autostopReached && nd > 0) { mockData.autostopReached = false; mockData.aFlags |= 1; } if (nd > 0 && mockData.remain === 0) mockData.remain = nd; closeModal('remain'); updateAllUI(); };
+        document.getElementById('remainCancelBtn').onclick = () => closeModal('remain');
+        document.getElementById('sensorApplyBtn').onclick = () => { let bound = parseFloat(document.getElementById('thresholdVal').value); mockData.sensorBounds[currentSensorIdx] = bound; let en = document.getElementById('reactionEnable').checked; mockData.reactionEnabled[currentSensorIdx] = en; closeModal('sensor'); updateAllUI(); };
+        document.getElementById('sensorCancelBtn').onclick = () => closeModal('sensor');
+        document.getElementById('generalApplyBtn').onclick = () => {
+            mockData.sensorVisible[0] = document.getElementById('showT0').checked;
+            mockData.sensorVisible[1] = document.getElementById('showT1').checked;
+            mockData.sensorVisible[2] = document.getElementById('showT2').checked;
+            mockData.sensorVisible[3] = document.getElementById('showT3').checked;
+            updateAllUI(); closeModal('general');
+        };
+        document.getElementById('generalCancelBtn').onclick = () => closeModal('general');
+
+        document.getElementById('btnRegulator').onclick = () => { document.getElementById('modalTargetV').value = mockData.targetV; openModal('regulator'); };
+        document.getElementById('btnRate').onclick = () => { document.getElementById('rateSlider').value = mockData.rate; document.getElementById('rateSliderVal').innerText = mockData.rate; openModal('rate'); };
+        document.getElementById('btnRemain').onclick = () => { document.getElementById('remainDose').value = mockData.dose; openModal('remain'); };
+        document.getElementById('btnGeneralSettings').onclick = () => { openModal('general'); };
+        document.getElementById('pumpToggleBtn').onclick = () => { if (mockData.aFlags & 1) mockData.aFlags &= 0xFE; else mockData.aFlags |= 1; updateAllUI(); };
+
+        document.getElementById('btnRegulatorM').onclick = () => { document.getElementById('modalTargetV').value = mockData.targetV; openModal('regulator'); };
+        document.getElementById('btnRateM').onclick = () => { document.getElementById('rateSlider').value = mockData.rate; document.getElementById('rateSliderVal').innerText = mockData.rate; openModal('rate'); };
+        document.getElementById('btnRemainM').onclick = () => { document.getElementById('remainDose').value = mockData.dose; openModal('remain'); };
+        document.getElementById('btnGeneralSettingsM').onclick = () => { openModal('general'); };
+
+        document.querySelectorAll('#modeButtons .mode-btn').forEach(btn => { btn.onclick = () => { mockData.stabMode = parseInt(btn.dataset.mode); updateAllUI(); updateChartVisibility(); }; });
+
+        document.getElementById('legendT0').onchange = (e) => { mockData.showLineT0 = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendT1').onchange = (e) => { mockData.showLineT1 = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendT2').onchange = (e) => { mockData.showLineT2 = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendT3').onchange = (e) => { mockData.showLineT3 = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendXGZP').onchange = (e) => { mockData.showGraphXGZP = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendAtmo').onchange = (e) => { mockData.showGraphAtmo = e.target.checked; updateChartVisibility(); };
+        document.getElementById('legendT0M') && (document.getElementById('legendT0M').onchange = (e) => { mockData.showLineT0 = e.target.checked; updateChartVisibility(); });
+        document.getElementById('legendT1M') && (document.getElementById('legendT1M').onchange = (e) => { mockData.showLineT1 = e.target.checked; updateChartVisibility(); });
+        document.getElementById('legendT2M') && (document.getElementById('legendT2M').onchange = (e) => { mockData.showLineT2 = e.target.checked; updateChartVisibility(); });
+        document.getElementById('legendT3M') && (document.getElementById('legendT3M').onchange = (e) => { mockData.showLineT3 = e.target.checked; updateChartVisibility(); });
+        document.getElementById('legendXGZPM') && (document.getElementById('legendXGZPM').onchange = (e) => { mockData.showGraphXGZP = e.target.checked; updateChartVisibility(); });
+        document.getElementById('legendAtmoM') && (document.getElementById('legendAtmoM').onchange = (e) => { mockData.showGraphAtmo = e.target.checked; updateChartVisibility(); });
+
+        document.getElementById('copyTplus125').onclick = () => { let newBound = mockData.temps[currentSensorIdx] + 0.125; document.getElementById('thresholdVal').value = newBound; };
+        document.getElementById('incThreshold').onclick = () => { let v = parseFloat(document.getElementById('thresholdVal').value) + 0.0625; document.getElementById('thresholdVal').value = v; };
+        document.getElementById('decThreshold').onclick = () => { let v = parseFloat(document.getElementById('thresholdVal').value) - 0.0625; document.getElementById('thresholdVal').value = v; };
+
+        let rs = document.getElementById('rateSlider'); rs.oninput = () => { document.getElementById('rateSliderVal').innerText = rs.value; };
+
+        let presetDiv = document.getElementById('modalPresets');
+        [1000, 1200, 1400, 1600, 1800, 2000].forEach((v, i) => { let btn = document.createElement('button'); btn.className = 'preset-btn'; btn.innerText = `M${i} (${(v/10).toFixed(1)}В)`; btn.onclick = () => { document.getElementById('modalTargetV').value = v/10; }; presetDiv.appendChild(btn); });
+
+        let timeDiv = document.getElementById('timeButtons');
+        timeList.forEach(sec => { let btn = document.createElement('div'); btn.className = 'time-btn'; btn.dataset.sec = sec; btn.innerText = `${Math.round(sec/60)}мин`; btn.onclick = () => setTimeWindow(sec); timeDiv.appendChild(btn); });
+        let timeDivM = document.getElementById('timeButtonsM');
+        if (timeDivM) { timeList.forEach(sec => { let btn = document.createElement('div'); btn.className = 'time-btn'; btn.dataset.sec = sec; btn.innerText = `${Math.round(sec/60)}мин`; btn.onclick = () => setTimeWindow(sec); timeDivM.appendChild(btn); }); }
+
+        setTimeWindow(600);
+        document.getElementById('themeSwitch').onclick = toggleTheme;
+        document.getElementById('themeSwitchM').onclick = toggleTheme;
+
+        // Табы для мобильной версии
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetId = tab.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                document.getElementById(targetId).classList.remove('hidden');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                if (targetId === 'tab2') {
+                    setTimeout(() => {
+                        if (charts.tempsM) charts.tempsM.resize();
+                        if (charts.xgzpM) charts.xgzpM.resize();
+                        if (charts.atmoM) charts.atmoM.resize();
+                        updateVerticalGrid();
+                    }, 100);
+                }
+            });
+        });
+    }
+
+    function start() {
+        initCharts();
+        initEvents();
+        updateAllUI();
+        updateChartVisibility();
+        for (let i = 0; i < 20; i++) addGraphPoint();
+        setInterval(() => {
+            mockData.temps = mockData.temps.map(t => Math.min(120, Math.max(20, t + (Math.random() - 0.5) * 0.4)));
+            mockData.ad += (Math.random() - 0.5) * 1.2;
+            mockData.ad = Math.min(780, Math.max(720, mockData.ad));
+            mockData.xgzp += (Math.random() - 0.5) * 0.2;
+            mockData.xgzp = Math.min(5, Math.max(-2, mockData.xgzp));
+            if ((mockData.aFlags & 1) && mockData.rate > 0 && mockData.remain > 0) {
+                let dec = mockData.rate / 3600 * 2;
+                mockData.remain = Math.max(0, mockData.remain - dec);
+                mockData.total += dec;
+                if (mockData.remain <= 0.1 && !mockData.autostopReached) { mockData.autostopReached = true; mockData.aFlags &= 0xFE; }
+            }
+            if (mockData.temps[0] > 95 && !mockData.overheat && mockData.stabMode !== 2) {
+                mockData.overheat = true; mockData.aFlags &= 0xFE;
+                setTimeout(() => mockData.overheat = false, 5000);
+            }
+            updateAllUI();
+            addGraphPoint();
+        }, 2000);
+    }
+    start();
+</script>
+</body>
+</html>
