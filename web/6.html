@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAC-RK Монитор v6</title>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --surface: #2d2d2d;
+            --primary: #4a9eff;
+            --danger: #e05555;
+            --warning: #ffa500;
+            --text: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #404040;
+            --grid-color: #3a3a3a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .header .title { font-size: 1.2em; font-weight: bold; }
+        .header .status { font-size: 0.8em; color: var(--text-secondary); }
+        .connection-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .connected { background: #4caf50; }
+
+        .tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-shrink: 0; }
+        .tab {
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .tab-content { display: none; flex: 1; min-height: 0; overflow-y: auto; }
+        .tab-content.active { display: flex; flex-direction: column; gap: 8px; }
+
+        .card-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        @media (max-width: 600px) { .card-row { grid-template-columns: repeat(2, 1fr); } }
+
+        .mini-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .mini-card .label { font-size: 0.75em; color: var(--text-secondary); }
+        .mini-card .value { font-size: 1.4em; font-weight: bold; }
+        .mini-card .sub { font-size: 0.7em; color: var(--text-secondary); }
+
+        .chart-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chart-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+        .range-info { font-size: 0.75em; color: var(--text-secondary); white-space: nowrap; }
+        .time-btns { display: flex; gap: 3px; flex-wrap: wrap; }
+        .time-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+        }
+        .time-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .chart-settings-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+        }
+
+        canvas {
+            width: 100%;
+            flex: 1;
+            min-height: 200px;
+            background: var(--bg);
+            border-radius: 6px;
+            display: block;
+        }
+
+        .controls { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; margin-top: 8px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+        .btn.danger { background: var(--danger); }
+        .btn.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .modal h3 { margin-bottom: 12px; }
+        .modal .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .modal input[type="number"] { width: 70px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; text-align: right; }
+        .modal select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; }
+        .modal .btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div><div class="title">PAC-RK v6.0</div><div class="status">Режим: <strong>СТАБИЛИЗАЦИЯ</strong></div></div>
+        <div><span class="connection-dot connected" id="connDot"></span><span style="font-size:0.85em">Online</span></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('monitor')">📈 Монитор</div>
+        <div class="tab" onclick="switchTab('control')">🎛️ Управление</div>
+    </div>
+
+    <div class="tab-content active" id="tab-monitor">
+        <div class="card-row">
+            <div class="mini-card" onclick="openSensorModal(0)"><div class="label">T0 · Голова</div><div class="value" id="mT0">78.25</div><div class="sub">Порог: <span id="mT0m">77.95</span></div></div>
+            <div class="mini-card" onclick="openSensorModal(1)"><div class="label">T1 · 2/3 царги</div><div class="value" id="mT1">78.38</div><div class="sub">Порог: <span id="mT1m">79.10</span></div></div>
+            <div class="mini-card" onclick="openSensorModal(2)"><div class="label">T2 · Куб</div><div class="value" id="mT2">91.80</div><div class="sub">Порог: <span id="mT2m">99.50</span></div></div>
+            <div class="mini-card" onclick="openSensorModal(3)"><div class="label">T3 · Вода</div><div class="value" id="mT3">44.50</div><div class="sub">Порог: <span id="mT3m">66.00</span></div></div>
+        </div>
+        <div class="card-row">
+            <div class="mini-card" onclick="openRegulatorModal()"><div class="label">Регулятор</div><div class="value"><span id="mMeas">185.3</span><span style="font-size:0.6em">V</span></div><div class="sub">Цель: <span id="mTarget">185.0</span></div></div>
+            <div class="mini-card"><div class="label">Атм. давление</div><div class="value" id="mAtm">743.2</div><div class="sub">мм рт. ст.</div></div>
+            <div class="mini-card"><div class="label">Давление в кубе</div><div class="value" id="mDiff">45.2</div><div class="sub">мм вод. ст.</div></div>
+            <div class="mini-card" onclick="openRateModal()"><div class="label">Отбор</div><div class="value" id="mRate">720</div><div class="sub">Всего: <span id="mTotal">1 250</span> мл</div></div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="chart-top-bar">
+                <div class="range-info">Мин. диапазон: <span id="rangeMin">76.0</span> · Макс. диапазон: <span id="rangeMax">79.0</span></div>
+                <div class="time-btns">
+                    <button class="time-btn" onclick="setTimeScale(5)">5 мин</button>
+                    <button class="time-btn active" onclick="setTimeScale(10)">10 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(20)">20 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(30)">30 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(45)">45 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(60)">60 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(90)">90 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(120)">120 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(240)">240 мин</button>
+                    <button class="time-btn" onclick="setTimeScale(450)">450 мин</button>
+                </div>
+                <button class="chart-settings-btn" onclick="openChartSettingsModal()">⚙️ Настройка графиков</button>
+            </div>
+            <canvas id="tempCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-control">
+        <div class="card-row">
+            <div class="mini-card" onclick="openRegulatorModal()"><div class="label">Регулятор</div><div class="value"><span id="cMeas">185.3</span> V</div></div>
+            <div class="mini-card" onclick="openRateModal()"><div class="label">Отбор</div><div class="value"><span id="cRate">720</span> мл/ч</div></div>
+            <div class="mini-card" onclick="openDecrementModal()"><div class="label">Декремент</div><div class="value" id="cDecStatus">ВЫКЛ</div></div>
+        </div>
+        <div class="card-row">
+            <div class="mini-card" onclick="openSensorModal(0)"><div class="label">T0</div><div class="value" id="cT0">78.25</div></div>
+            <div class="mini-card" onclick="openSensorModal(1)"><div class="label">T1</div><div class="value" id="cT1">78.38</div></div>
+            <div class="mini-card" onclick="openSensorModal(2)"><div class="label">T2</div><div class="value" id="cT2">91.80</div></div>
+            <div class="mini-card" onclick="openSensorModal(3)"><div class="label">T3</div><div class="value" id="cT3">44.50</div></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="sendCommand('M0')">Стаб</button>
+        <button class="btn" onclick="sendCommand('M1')">Разгон</button>
+        <button class="btn danger" onclick="sendCommand('M2')">Стоп</button>
+        <button class="btn secondary" id="pauseBtn" onclick="togglePause()">Пауза</button>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="sensorModal">
+        <div class="modal">
+            <h3>Настройка датчика <span id="sensorNum">0</span></h3>
+            <div class="row"><span>Текущая</span><strong id="sensorCur">78.25 °C</strong></div>
+            <div class="row"><span>Порог</span><input type="number" id="sensorMargin" step="0.01"></div>
+            <div class="row"><span>Задержка вкл / выкл</span><span><input type="number" id="sensorDelayUp" style="width:50px"> / <input type="number" id="sensorDelayDn" style="width:50px"> c</span></div>
+            <div class="row"><span>Реакции</span><span><label><input type="checkbox" id="snd"> Звук</label><label><input type="checkbox" id="stp"> Стоп</label><label><input type="checkbox" id="htr"> Нагрев</label></span></div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeSensorModal()">Отмена</button><button class="btn" onclick="saveSensor()">Сохранить</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="regulatorModal">
+        <div class="modal">
+            <h3>Регулятор</h3>
+            <div class="row"><span>Измеренное</span><strong id="regMeas">185.3 V</strong></div>
+            <div class="row"><span>Целевое</span><input type="number" id="targetU" step="0.1"></div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeRegulatorModal()">Отмена</button><button class="btn" onclick="setTarget()">Установить</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="rateModal">
+        <div class="modal">
+            <h3>Отбор</h3>
+            <div class="row"><span>Скорость</span><input type="number" id="rateInput" step="10"><span>мл/ч</span></div>
+            <div class="row"><span>Доза (автостоп)</span><input type="number" id="doseInput" step="100"><span>мл</span></div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeRateModal()">Отмена</button><button class="btn" onclick="setRate()">Установить</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="decrementModal">
+        <div class="modal">
+            <h3>Настройка декремента</h3>
+            <div class="row"><span>Состояние</span><select id="decStatus"><option value="0">Выключен</option><option value="1">Включен</option></select></div>
+            <div class="row"><span>Контрольный датчик</span><select id="decSensor"><option value="0">T0 Голова</option><option value="1">T1 2/3 царги</option><option value="2">T2 Куб</option></select></div>
+            <div class="row"><span>Порог начала</span><input type="number" id="decStart" step="0.1" value="85.0"> °C</div>
+            <div class="row"><span>Порог конца</span><input type="number" id="decEnd" step="0.1" value="98.0"> °C</div>
+            <div class="row"><span>Конечная скорость</span><input type="number" id="decSpeed" step="10" value="100"> мл/ч</div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeDecrementModal()">Отмена</button><button class="btn" onclick="saveDecrement()">Сохранить</button></div>
+        </div>
+    </div>
+    <!-- Chart Settings Modal (New) -->
+    <div class="modal-overlay" id="chartSettingsModal">
+        <div class="modal">
+            <h3>Настройка графиков</h3>
+            <div class="row"><span>T0 · Голова</span><span><label><input type="checkbox" id="csChk0" checked> Видим</label> <input type="color" id="csCol0" value="#4a9eff"></span></div>
+            <div class="row"><span>T1 · 2/3 царги</span><span><label><input type="checkbox" id="csChk1" checked> Видим</label> <input type="color" id="csCol1" value="#4caf50"></span></div>
+            <div class="row"><span>T2 · Куб</span><span><label><input type="checkbox" id="csChk2"> Видим</label> <input type="color" id="csCol2" value="#ffa500"></span></div>
+            <div class="row"><span>T3 · Вода</span><span><label><input type="checkbox" id="csChk3"> Видим</label> <input type="color" id="csCol3" value="#e05555"></span></div>
+            <div class="btn-row"><button class="btn secondary" onclick="closeChartSettingsModal()">Отмена</button><button class="btn" onclick="saveChartSettings()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <script>
+        let demo = {
+            t: [78.25, 78.38, 91.80, 44.50],
+            margin: [77.95, 79.10, 99.50, 66.00],
+            react: [15, 11, 8, 9],
+            uMeas: 185.3, uTarget: 185.0,
+            rate: 720, total: 1250, dose: 3000,
+            atm: 743.2, diff: 45.2,
+            paused: false,
+            decEnabled: false, decSensor: 0, decStart: 85.0, decEnd: 98.0, decSpeed: 100,
+            history: [[], [], [], []],
+            timeScale: 10
+        };
+
+        let canvas, ctx;
+        let colors = ['#4a9eff', '#4caf50', '#ffa500', '#e05555'];
+        let visible = [true, true, false, false];
+
+        function initChart() {
+            canvas = document.getElementById('tempCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            drawChart();
+        }
+
+        function drawChart() {
+            if (!ctx) return;
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            let allVals = [];
+            for (let s = 0; s < 4; s++) {
+                if (visible[s]) allVals = allVals.concat(demo.history[s]);
+            }
+            if (allVals.length === 0) { allVals = [76, 80]; }
+            let minVal = Math.floor(Math.min(...allVals) * 2) / 2;
+            let maxVal = Math.ceil(Math.max(...allVals) * 2) / 2;
+            let range = maxVal - minVal;
+            if (range < 2) { let mid = (minVal + maxVal) / 2; minVal = mid - 1; maxVal = mid + 1; range = 2; }
+
+            document.getElementById('rangeMin').textContent = minVal.toFixed(1);
+            document.getElementById('rangeMax').textContent = maxVal.toFixed(1);
+
+            ctx.strokeStyle = '#3a3a3a';
+            ctx.lineWidth = 0.5;
+            let gridStep = range <= 5 ? 0.5 : (range <= 15 ? 1 : 2);
+            for (let v = Math.ceil(minVal / gridStep) * gridStep; v <= maxVal; v += gridStep) {
+                let y = h - ((v - minVal) / range) * h;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+            let vertLines = Math.min(10, demo.timeScale);
+            for (let i = 0; i <= vertLines; i++) {
+                let x = (w / vertLines) * i;
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+
+            for (let s = 0; s < 4; s++) {
+                if (!visible[s]) continue;
+                let hh = demo.history[s];
+                if (hh.length < 2) continue;
+                ctx.beginPath();
+                ctx.strokeStyle = colors[s];
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < hh.length; i++) {
+                    let x = (i / (hh.length - 1)) * w;
+                    let y = h - ((hh[i] - minVal) / range) * h;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function setTimeScale(minutes) {
+            demo.timeScale = minutes;
+            demo.history = [[], [], [], []];
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function openChartSettingsModal() {
+            document.getElementById('csChk0').checked = visible[0];
+            document.getElementById('csChk1').checked = visible[1];
+            document.getElementById('csChk2').checked = visible[2];
+            document.getElementById('csChk3').checked = visible[3];
+            document.getElementById('csCol0').value = colors[0];
+            document.getElementById('csCol1').value = colors[1];
+            document.getElementById('csCol2').value = colors[2];
+            document.getElementById('csCol3').value = colors[3];
+            document.getElementById('chartSettingsModal').classList.add('active');
+        }
+        function closeChartSettingsModal() { document.getElementById('chartSettingsModal').classList.remove('active'); }
+        function saveChartSettings() {
+            visible[0] = document.getElementById('csChk0').checked;
+            visible[1] = document.getElementById('csChk1').checked;
+            visible[2] = document.getElementById('csChk2').checked;
+            visible[3] = document.getElementById('csChk3').checked;
+            colors[0] = document.getElementById('csCol0').value;
+            colors[1] = document.getElementById('csCol1').value;
+            colors[2] = document.getElementById('csCol2').value;
+            colors[3] = document.getElementById('csCol3').value;
+            closeChartSettingsModal();
+            drawChart();
+        }
+
+        function updateUI() {
+            let ids = ['mT0','mT1','mT2','mT3','cT0','cT1','cT2','cT3'];
+            ids.forEach((id, i) => { if (document.getElementById(id)) document.getElementById(id).textContent = demo.t[i % 4].toFixed(2); });
+            document.getElementById('mT0m').textContent = demo.margin[0].toFixed(2);
+            document.getElementById('mT1m').textContent = demo.margin[1].toFixed(2);
+            document.getElementById('mT2m').textContent = demo.margin[2].toFixed(2);
+            document.getElementById('mT3m').textContent = demo.margin[3].toFixed(2);
+            document.getElementById('mMeas').textContent = demo.uMeas.toFixed(1);
+            document.getElementById('cMeas').textContent = demo.uMeas.toFixed(1);
+            document.getElementById('mTarget').textContent = demo.uTarget.toFixed(1);
+            document.getElementById('mRate').textContent = demo.rate;
+            document.getElementById('cRate').textContent = demo.rate;
+            document.getElementById('mTotal').textContent = demo.total.toLocaleString();
+            document.getElementById('mAtm').textContent = demo.atm.toFixed(1);
+            document.getElementById('mDiff').textContent = demo.diff.toFixed(1);
+            document.getElementById('cDecStatus').textContent = demo.decEnabled ? 'ВКЛ' : 'ВЫКЛ';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.querySelectorAll('.tab').forEach(t => {
+                if (t.textContent.includes(tab === 'monitor' ? 'Монитор' : 'Управление')) t.classList.add('active');
+            });
+            setTimeout(() => { initChart(); resizeCanvas(); }, 100);
+        }
+
+        function openSensorModal(n) {
+            document.getElementById('sensorNum').textContent = n;
+            document.getElementById('sensorCur').textContent = demo.t[n].toFixed(2) + ' °C';
+            document.getElementById('sensorMargin').value = demo.margin[n].toFixed(2);
+            document.getElementById('sensorDelayUp').value = 3;
+            document.getElementById('sensorDelayDn').value = 25;
+            let r = demo.react[n];
+            document.getElementById('snd').checked = !!(r & 2);
+            document.getElementById('stp').checked = !!(r & 4);
+            document.getElementById('htr').checked = !!(r & 8);
+            document.getElementById('sensorModal').classList.add('active');
+        }
+        function closeSensorModal() { document.getElementById('sensorModal').classList.remove('active'); }
+        function saveSensor() {
+            let n = parseInt(document.getElementById('sensorNum').textContent);
+            demo.margin[n] = parseFloat(document.getElementById('sensorMargin').value);
+            demo.react[n] = 8 | (document.getElementById('snd').checked ? 2 : 0) | (document.getElementById('stp').checked ? 4 : 0) | (document.getElementById('htr').checked ? 1 : 0);
+            closeSensorModal(); updateUI();
+        }
+
+        function openRegulatorModal() {
+            document.getElementById('regMeas').textContent = demo.uMeas.toFixed(1) + ' V';
+            document.getElementById('targetU').value = demo.uTarget.toFixed(1);
+            document.getElementById('regulatorModal').classList.add('active');
+        }
+        function closeRegulatorModal() { document.getElementById('regulatorModal').classList.remove('active'); }
+        function setTarget() { demo.uTarget = parseFloat(document.getElementById('targetU').value); closeRegulatorModal(); updateUI(); }
+
+        function openRateModal() {
+            document.getElementById('rateInput').value = demo.rate;
+            document.getElementById('doseInput').value = demo.dose;
+            document.getElementById('rateModal').classList.add('active');
+        }
+        function closeRateModal() { document.getElementById('rateModal').classList.remove('active'); }
+        function setRate() { demo.rate = parseInt(document.getElementById('rateInput').value); demo.dose = parseInt(document.getElementById('doseInput').value); closeRateModal(); updateUI(); }
+
+        function openDecrementModal() {
+            document.getElementById('decStatus').value = demo.decEnabled ? '1' : '0';
+            document.getElementById('decSensor').value = demo.decSensor;
+            document.getElementById('decStart').value = demo.decStart;
+            document.getElementById('decEnd').value = demo.decEnd;
+            document.getElementById('decSpeed').value = demo.decSpeed;
+            document.getElementById('decrementModal').classList.add('active');
+        }
+        function closeDecrementModal() { document.getElementById('decrementModal').classList.remove('active'); }
+        function saveDecrement() {
+            demo.decEnabled = document.getElementById('decStatus').value === '1';
+            demo.decSensor = parseInt(document.getElementById('decSensor').value);
+            demo.decStart = parseFloat(document.getElementById('decStart').value);
+            demo.decEnd = parseFloat(document.getElementById('decEnd').value);
+            demo.decSpeed = parseInt(document.getElementById('decSpeed').value);
+            closeDecrementModal(); updateUI();
+        }
+
+        function togglePause() { demo.paused = !demo.paused; document.getElementById('pauseBtn').textContent = demo.paused ? 'Старт' : 'Пауза'; }
+        function sendCommand(cmd) { console.log('Отправлена команда:', cmd); }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        setInterval(() => {
+            for (let i = 0; i < 4; i++) {
+                demo.t[i] += (Math.random() - 0.5) * (i === 2 ? 0.04 : 0.05);
+                demo.history[i].push(demo.t[i]);
+                let maxPoints = demo.timeScale * 60;
+                if (demo.history[i].length > maxPoints) demo.history[i].shift();
+            }
+            demo.uMeas += (Math.random() - 0.5) * 0.4;
+            demo.atm += (Math.random() - 0.5) * 0.02;
+            demo.diff += (Math.random() - 0.5) * 0.3;
+            if (!demo.paused) demo.total += Math.round(demo.rate / 3600);
+            updateUI();
+            drawChart();
+        }, 1000);
+
+        setTimeout(() => { initChart(); resizeCanvas(); }, 200);
+        updateUI();
+    </script>
+</body>
+</html>
