@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAC-RK Control Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --dim: #8b949e;
+            --accent: #58a6ff;
+            --danger: #f85149;
+            --warning: #d2991d;
+            --success: #3fb950;
+            --t0: #f85149;
+            --t1: #f0883e;
+            --t2: #f0c040;
+            --t3: #58a6ff;
+            --p0: #bc8cff;
+            --p1: #79c0ff;
+            --p2: #a5d6ff;
+            --p3: #ffa198;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .app {
+            width: 100%;
+            max-width: 1200px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 14px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+        .status-dot.warning {
+            background: var(--warning);
+        }
+        .status-dot.alarm {
+            background: var(--danger);
+        }
+        .clock-text {
+            font-size: 0.85em;
+            color: var(--dim);
+        }
+        .icon-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            font-size: 1.1em;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .icon-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .card-header {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--dim);
+            margin-bottom: 10px;
+        }
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .mini-item {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .mini-label {
+            font-size: 0.62em;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+        .mini-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        .mini-unit {
+            font-size: 0.4em;
+            color: var(--dim);
+        }
+        .t0 {
+            color: var(--t0);
+        }
+        .t1 {
+            color: var(--t1);
+        }
+        .t2 {
+            color: var(--t2);
+        }
+        .t3 {
+            color: var(--t3);
+        }
+        .p0 {
+            color: var(--p0);
+        }
+        .p1 {
+            color: var(--p1);
+        }
+        .p2 {
+            color: var(--p2);
+        }
+        .p3 {
+            color: var(--p3);
+        }
+
+        .reg-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            font-size: 0.8em;
+        }
+        .reg-label {
+            color: var(--dim);
+        }
+        .reg-value {
+            font-weight: 500;
+        }
+        .mode-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .mode-heat {
+            background: #f8514922;
+            color: var(--danger);
+            border: 1px solid #f8514944;
+        }
+        .mode-stab {
+            background: #d2991d22;
+            color: var(--warning);
+            border: 1px solid #d2991d44;
+        }
+        .mode-sel {
+            background: #3fb95022;
+            color: var(--success);
+            border: 1px solid #3fb95044;
+        }
+        .mode-stop {
+            background: #8b949e22;
+            color: var(--dim);
+            border: 1px solid #8b949e44;
+        }
+        .divider {
+            border-top: 1px solid var(--border);
+            margin: 8px 0;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+        .slider-val {
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 40px;
+            text-align: right;
+            font-size: 0.9em;
+        }
+        .btn-row {
+            display: flex;
+            gap: 4px;
+        }
+        .btn {
+            flex: 1;
+            padding: 7px 3px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: #0d1117;
+            color: var(--text);
+            font-size: 0.68em;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            font-family: inherit;
+        }
+        .btn:hover {
+            border-color: var(--accent);
+        }
+        .btn.active {
+            background: #58a6ff22;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn.danger {
+            border-color: #f8514944;
+            color: var(--danger);
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .chart-card canvas {
+            max-height: 350px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.68em;
+            color: var(--dim);
+            padding: 8px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+            width: 90%;
+            max-width: 440px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        .modal h2 {
+            font-size: 1.1em;
+            color: var(--accent);
+            margin-bottom: 14px;
+        }
+        .modal label {
+            display: block;
+            font-size: 0.72em;
+            color: var(--dim);
+            margin: 10px 0 4px;
+            text-transform: uppercase;
+        }
+        .modal input,
+        .modal select {
+            width: 100%;
+            padding: 8px;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 18px;
+        }
+        .modal-buttons button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #0d1117;
+            color: var(--text);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .modal-buttons button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        @media (max-width: 800px) {
+            .grid-3 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 500px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+
+        <!-- ШАПКА -->
+        <div class="header">
+            <h1>⚗️ PAC-RK</h1>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Ожидание данных...</span>
+                </div>
+                <span class="clock-text" id="clock">--:--:--</span>
+                <button class="icon-btn" onclick="openModal('settingsModal')" title="Настройки">⚙️</button>
+                <button class="icon-btn" onclick="openModal('paramsModal')" title="Параметры">📋</button>
+                <button class="icon-btn" onclick="openModal('limitsModal')" title="Пороги">📊</button>
+            </div>
+        </div>
+
+        <!-- ТРИ КОЛОНКИ -->
+        <div class="grid-3">
+
+            <!-- Температуры -->
+            <div class="card">
+                <div class="card-header">🌡️ Температуры</div>
+                <div class="grid-2x2">
+                    <div class="mini-item"><div class="mini-label">Куб T0</div><div class="mini-value t0" id="valT0">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item"><div class="mini-label">Царга низ T1</div><div class="mini-value t1" id="valT1">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item"><div class="mini-label">Царга верх T2</div><div class="mini-value t2" id="valT2">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item"><div class="mini-label">Вода T3</div><div class="mini-value t3" id="valT3">--</div><div class="mini-unit">°C</div></div>
+                </div>
+            </div>
+
+            <!-- Давление -->
+            <div class="card">
+                <div class="card-header">📊 Давление</div>
+                <div class="grid-2x2">
+                    <div class="mini-item"><div class="mini-label">Атмосферное</div><div class="mini-value p0" id="valPressure">--</div><div class="mini-unit">мм рт.ст.</div></div>
+                    <div class="mini-item"><div class="mini-label">Дифф. давление</div><div class="mini-value p1" id="valDP">--</div><div class="mini-unit">Па</div></div>
+                    <div class="mini-item"><div class="mini-label">H₂O кипения</div><div class="mini-value p2" id="valH2O">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item"><div class="mini-label">Спирт кипения</div><div class="mini-value p3" id="valEtOH">--</div><div class="mini-unit">°C</div></div>
+                </div>
+            </div>
+
+            <!-- Регулятор + Управление -->
+            <div class="card">
+                <div class="card-header">⚡ Регулятор и управление</div>
+
+                <div class="reg-line"><span class="reg-label">Сеть</span><span class="reg-value" id="valU">-- В</span></div>
+                <div class="reg-line"><span class="reg-label">ТЭН</span><span class="reg-value" id="valI">-- В</span></div>
+                <div class="reg-line"><span class="reg-label">Мощность</span><span class="reg-value" id="valPower">--%</span></div>
+                <div class="reg-line"><span class="reg-label">Режим</span><span class="mode-badge mode-stop" id="valMode">Нет данных</span></div>
+
+                <div class="divider"></div>
+
+                <div class="slider-row">
+                    <span style="font-size:0.68em;color:var(--dim);">Мощность</span>
+                    <input type="range" min="0" max="250" value="0" id="powerSlider" oninput="updatePowerSlider(this.value)">
+                    <span class="slider-val" id="powerValue">0 В</span>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn" onclick="sendCommand('MODE:RUN')">🔥 Разгон</button>
+                    <button class="btn" onclick="sendCommand('MODE:STAB')">⚖️ Стаб.</button>
+                    <button class="btn" onclick="sendCommand('MODE:SEL')">💧 Отбор</button>
+                    <button class="btn danger" onclick="sendCommand('MODE:STOP')">⏹️ Стоп</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ГРАФИК -->
+        <div class="chart-card">
+            <div class="card-header">📈 График температур</div>
+            <canvas id="tempChart"></canvas>
+        </div>
+
+        <div class="footer">PAC-RK Control Panel v2.0 • Данные загружаются с сервера</div>
+
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>⚙️ Настройки</h2>
+            <label>COM-порт</label>
+            <select><option>COM3</option><option>COM4</option></select>
+            <label>Скорость</label>
+            <select><option>9600</option><option>115200</option></select>
+            <label>Wi-Fi SSID</label>
+            <input type="text" value="PAC-RK-Net">
+            <label>Пароль Wi-Fi</label>
+            <input type="password" value="********">
+            <div class="modal-buttons">
+                <button onclick="closeModal('settingsModal')">Отмена</button>
+                <button class="primary" onclick="closeModal('settingsModal')">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="paramsModal">
+        <div class="modal">
+            <h2>📋 Параметры процесса</h2>
+            <label>Порог T2 (отбор тела)</label>
+            <input type="number" value="98.5" step="0.1">
+            <label>Порог T0 (авария куба)</label>
+            <input type="number" value="85.0" step="0.1">
+            <label>Скорость отбора (мл/час)</label>
+            <input type="number" value="500" step="10">
+            <label>Целевая T3 (вода)</label>
+            <input type="number" value="60.0" step="0.5">
+            <div class="modal-buttons">
+                <button onclick="closeModal('paramsModal')">Отмена</button>
+                <button class="primary" onclick="closeModal('paramsModal')">Применить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="limitsModal">
+        <div class="modal">
+            <h2>📊 Пороги аварий</h2>
+            <label>Макс. T0 (куб)</label>
+            <input type="number" value="85.0" step="0.1">
+            <label>Макс. T3 (вода)</label>
+            <input type="number" value="65.0" step="0.1">
+            <label>Мин. давление</label>
+            <input type="number" value="720" step="1">
+            <label>Макс. дифф. давление</label>
+            <input type="number" value="50" step="1">
+            <div class="modal-buttons">
+                <button onclick="closeModal('limitsModal')">Отмена</button>
+                <button class="primary" onclick="closeModal('limitsModal')">Применить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // НАСТРОЙКИ ПОДКЛЮЧЕНИЯ К СЕРВЕРУ
+        // ============================================================
+        const API_URL = 'https://ваш-сайт.ru/pac-rk/api.php'; // ← ЗАМЕНИТЕ НА СВОЙ URL
+
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        // ============================================================
+        let currentData = null;
+        let chartLabels = [];
+        let chartT0 = [];
+        let chartT1 = [];
+        let chartT2 = [];
+        let chartT3 = [];
+        let startTime = Date.now();
+
+        // ============================================================
+        // ИНИЦИАЛИЗАЦИЯ ГРАФИКА
+        // ============================================================
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    { label: 'T0 Куб', data: chartT0, borderColor: '#f85149',
+                        backgroundColor: '#f8514922', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+                    { label: 'T1 Царга низ', data: chartT1, borderColor: '#f0883e',
+                        backgroundColor: '#f0883e22', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+                    { label: 'T2 Царга верх', data: chartT2, borderColor: '#f0c040',
+                        backgroundColor: '#f0c04022', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
+                    { label: 'T3 Вода', data: chartT3, borderColor: '#58a6ff',
+                        backgroundColor: '#58a6ff22', tension: 0.3, pointRadius: 0, borderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#8b949e', usePointStyle: true, padding: 15,
+                            font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#484f58', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
+                    y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' }, min: 50,
+                    max: 105 }
+                },
+                animation: { duration: 300 }
+            }
+        });
+
+        // ============================================================
+        // ПОЛУЧЕНИЕ ДАННЫХ С СЕРВЕРА
+        // ============================================================
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL + '?action=get_last');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                if (data && data.T0 !== undefined) {
+                    updateDisplay(data);
+                    updateChart(data);
+                }
+            } catch (err) {
+                console.log('Ожидание данных с сервера...');
+            }
+        }
+
+        // ============================================================
+        // ОБНОВЛЕНИЕ ЦИФРОВЫХ ПОКАЗАТЕЛЕЙ
+        // ============================================================
+        function updateDisplay(d) {
+            currentData = d;
+
+            // Температуры
+            document.getElementById('valT0').textContent = d.T0 !== undefined ? d.T0.toFixed(1) : '--';
+            document.getElementById('valT1').textContent = d.T1 !== undefined ? d.T1.toFixed(1) : '--';
+            document.getElementById('valT2').textContent = d.T2 !== undefined ? d.T2.toFixed(1) : '--';
+            document.getElementById('valT3').textContent = d.T3 !== undefined ? d.T3.toFixed(1) : '--';
+
+            // Давление
+            document.getElementById('valPressure').textContent = d.pressure !== undefined ? d.pressure :
+                '--';
+            document.getElementById('valDP').textContent = d.dp !== undefined ? d.dp : '--';
+            document.getElementById('valH2O').textContent = d.h2o !== undefined ? d.h2o.toFixed(1) : '--';
+            document.getElementById('valEtOH').textContent = d.etoh !== undefined ? d.etoh.toFixed(1) :
+                '--';
+
+            // Регулятор
+            document.getElementById('valU').textContent = d.U !== undefined ? d.U + ' В' : '-- В';
+            document.getElementById('valI').textContent = d.I !== undefined ? d.I + ' В' : '-- В';
+            document.getElementById('valPower').textContent = d.power !== undefined ? d.power + '%' :
+                '--%';
+
+            // Обновление слайдера
+            if (d.I !== undefined) {
+                document.getElementById('powerSlider').value = d.I;
+                document.getElementById('powerValue').textContent = d.I + ' В';
+            }
+
+            // Режим
+            updateModeBadge(d.mode);
+            updateStatusDot(d.mode);
+
+            // Таймер работы
+            updateClock();
+        }
+
+        // ============================================================
+        // ОБНОВЛЕНИЕ ГРАФИКА
+        // ============================================================
+        function updateChart(d) {
+            const now = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit',
+                second: '2-digit' });
+            chartLabels.push(now);
+            chartT0.push(d.T0 || 0);
+            chartT1.push(d.T1 || 0);
+            chartT2.push(d.T2 || 0);
+            chartT3.push(d.T3 || 0);
+
+            if (chartLabels.length > 60) {
+                chartLabels.shift();
+                chartT0.shift();
+                chartT1.shift();
+                chartT2.shift();
+                chartT3.shift();
+            }
+            tempChart.update();
+        }
+
+        // ============================================================
+        // ИНДИКАТОР РЕЖИМА
+        // ============================================================
+        function updateModeBadge(mode) {
+            const badge = document.getElementById('valMode');
+            const modes = {
+                'heat': { text: 'Разгон', cls: 'mode-heat' },
+                'stab': { text: 'Стабилизация', cls: 'mode-stab' },
+                'sel': { text: 'Отбор', cls: 'mode-sel' },
+                'stop': { text: 'Остановлен', cls: 'mode-stop' }
+            };
+            const m = modes[mode] || { text: 'Нет данных', cls: 'mode-stop' };
+            badge.textContent = m.text;
+            badge.className = 'mode-badge ' + m.cls;
+            document.getElementById('statusText').textContent = m.text;
+        }
+
+        function updateStatusDot(mode) {
+            const dot = document.getElementById('statusDot');
+            dot.className = 'status-dot';
+            if (mode === 'stop') dot.classList.add('warning');
+        }
+
+        function updateClock() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60);
+            const s = elapsed % 60;
+            document.getElementById('clock').textContent =
+                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2,
+                '0');
+        }
+
+        // ============================================================
+        // ОТПРАВКА КОМАНД
+        // ============================================================
+        function sendCommand(cmd) {
+            console.log('Отправка команды:', cmd);
+            fetch(API_URL + '?action=send_command&cmd=' + encodeURIComponent(cmd))
+                .then(r => r.json())
+                .then(r => console.log('Ответ сервера:', r))
+                .catch(e => console.error('Ошибка отправки команды:', e));
+        }
+
+        function updatePowerSlider(val) {
+            document.getElementById('powerValue').textContent = val + ' В';
+            sendCommand('SET_POWER:' + val);
+        }
+
+        // ============================================================
+        // МОДАЛЬНЫЕ ОКНА
+        // ============================================================
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e
+                .target === o) closeModal(o.id); }));
+
+        // ============================================================
+        // ЗАПУСК
+        // ============================================================
+        fetchData(); // первый запрос сразу
+        setInterval(fetchData, 1000); // затем каждую секунду
+    </script>
+</body>
+</html>
