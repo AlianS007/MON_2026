@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAC-RK Control Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --border: #e0e0e0;
+            --text: #333333;
+            --dim: #888888;
+            --accent: #4a90d9;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --success: #2ecc71;
+            --t0: #e74c3c;
+            --t1: #f39c12;
+            --t2: #2ecc71;
+            --t3: #3498db;
+            --p0: #9b59b6;
+            --p1: #1abc9c;
+            --p2: #3498db;
+            --p3: #e67e22;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --radius: 10px;
+            --padding: 16px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .app { width: 100%; max-width: 1400px; display: flex; flex-direction: column; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 16px;
+            padding: 14px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        .status-area { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .status-badge { display: flex; align-items: center; gap: 6px; font-size: 0.95em; }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--success); box-shadow: 0 0 8px var(--success);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        .status-dot.warning { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+        .status-dot.alarm { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        .clock-text { font-size: 0.9em; color: var(--dim); }
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--dim); font-size: 1.2em; padding: 8px 12px;
+            border-radius: 6px; cursor: pointer; transition: all 0.2s;
+        }
+        .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        .tabs { display: flex; gap: 0; margin-bottom: 16px; }
+        .tab-btn {
+            padding: 12px 24px; border: 1px solid var(--border); border-bottom: none;
+            background: var(--bg); color: var(--dim); font-size: 0.9em;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+            border-radius: var(--radius) var(--radius) 0 0; margin-right: 2px;
+        }
+        .tab-btn.active { background: var(--surface); color: var(--accent); font-weight: 600; }
+        .tab-btn:hover { color: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: var(--padding); box-shadow: var(--shadow);
+        }
+        .card-header {
+            font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--dim); margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mini-item { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
+        .mini-label { font-size: 0.68em; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+        .mini-value { font-size: 1.8em; font-weight: 700; line-height: 1.2; }
+        .mini-unit { font-size: 0.45em; color: var(--dim); }
+        .t0{color:var(--t0)} .t1{color:var(--t1)} .t2{color:var(--t2)} .t3{color:var(--t3)}
+        .p0{color:var(--p0)} .p1{color:var(--p1)} .p2{color:var(--p2)} .p3{color:var(--p3)}
+
+        .reg-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 0.9em; }
+        .reg-label { color: var(--dim); }
+        .reg-value { color: var(--text); font-weight: 500; }
+        .mode-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 4px;
+            font-size: 0.78em; font-weight: 600; letter-spacing: 1px;
+        }
+        .mode-heat{background:#e74c3c22;color:var(--danger);border:1px solid #e74c3c44}
+        .mode-stab{background:#f39c1222;color:var(--warning);border:1px solid #f39c1244}
+        .mode-sel{background:#2ecc7122;color:var(--success);border:1px solid #2ecc7144}
+        .mode-stop{background:#88888822;color:var(--dim);border:1px solid #88888844}
+        .divider{border-top:1px solid var(--border);margin:10px 0}
+        .slider-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+        .slider-row input[type="range"]{flex:1;accent-color:var(--accent);height:6px}
+        .slider-value{font-size:1.1em;font-weight:700;color:var(--accent);min-width:48px;text-align:right}
+        .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+        .btn{
+            flex:1;min-width:60px;padding:10px 8px;border:1px solid var(--border);
+            border-radius:6px;background:var(--bg);color:var(--text);font-size:0.82em;
+            cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;
+        }
+        .btn:hover{border-color:var(--accent)}
+        .btn.active{background:#4a90d922;border-color:var(--accent);color:var(--accent)}
+        .btn.danger{border-color:#e74c3c44;color:var(--danger)}
+        .btn.danger:hover{background:#e74c3c22;border-color:var(--danger)}
+        .btn-wide{flex:2}
+
+        .chart-card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:var(--padding);margin-bottom:16px;box-shadow:var(--shadow);
+        }
+        .chart-card canvas{max-height:400px;width:100%!important}
+        .footer{text-align:center;font-size:0.72em;color:var(--dim);padding:10px}
+
+        .modal-overlay{
+            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;
+        }
+        .modal-overlay.show{display:flex}
+        .modal{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:14px;padding:24px;width:90%;max-width:480px;
+            box-shadow:0 20px 40px rgba(0,0,0,0.15);
+        }
+        .modal h2{font-size:1.2em;color:var(--accent);margin-bottom:16px;letter-spacing:1px}
+        .modal label{display:block;font-size:0.8em;color:var(--dim);margin-bottom:4px;margin-top:12px;text-transform:uppercase;letter-spacing:1px}
+        .modal input,.modal select{
+            width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);
+            border-radius:6px;color:var(--text);font-size:0.95em;font-family:inherit;
+        }
+        .modal input:focus,.modal select:focus{outline:none;border-color:var(--accent)}
+        .modal-buttons{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+        .modal-buttons button{
+            padding:10px 20px;border-radius:6px;border:1px solid var(--border);
+            background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.9em;transition:all 0.2s;
+        }
+        .modal-buttons button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+        .modal-buttons button:hover{border-color:var(--accent)}
+
+        @media (max-width:900px){
+            .grid-4{grid-template-columns:1fr 1fr}
+            .grid-3{grid-template-columns:1fr 1fr}
+            .grid-2{grid-template-columns:1fr}
+            .mini-value{font-size:1.4em}
+            .tab-btn{padding:10px 14px;font-size:0.78em}
+        }
+        @media (max-width:560px){
+            .grid-4{grid-template-columns:1fr 1fr}
+            .grid-3{grid-template-columns:1fr}
+            .grid-2{grid-template-columns:1fr}
+            .header h1{font-size:1.2em}
+            .tab-btn{padding:8px 10px;font-size:0.7em}
+            .mini-value{font-size:1.2em}
+            .btn{font-size:0.7em;padding:8px 4px}
+        }
+        @media (min-width:1200px){
+            .grid-4{grid-template-columns:repeat(4,1fr)}
+            .mini-value{font-size:2em}
+            .chart-card canvas{max-height:450px}
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+
+        <!-- ШАПКА -->
+        <div class="header">
+            <h1>⚗️ PAC-RK</h1>
+            <div class="status-area">
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Стабилизация</span>
+                </div>
+                <span class="clock-text" id="clock">00:00:00</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="openModal('settingsModal')" title="Настройки">⚙️</button>
+                <button class="icon-btn" onclick="openModal('paramsModal')" title="Параметры">📋</button>
+                <button class="icon-btn" onclick="openModal('limitsModal')" title="Пороги">📊</button>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('temps')">🌡️ Температуры</button>
+            <button class="tab-btn" onclick="switchTab('pressure')">📊 Давление</button>
+            <button class="tab-btn" onclick="switchTab('regulator')">⚡ Регулятор</button>
+            <button class="tab-btn" onclick="switchTab('control')">🎮 Управление</button>
+        </div>
+
+        <!-- ВКЛАДКА: ТЕМПЕРАТУРЫ -->
+        <div class="tab-content active" id="tab-temps">
+            <div class="grid-4">
+                <div class="card"><div class="card-header">Куб T0</div><div class="mini-item"><div class="mini-value t0" id="valT0">78.5</div><div class="mini-unit">°C</div></div></div>
+                <div class="card"><div class="card-header">Царга низ T1</div><div class="mini-item"><div class="mini-value t1" id="valT1_2">79.1</div><div class="mini-unit">°C</div></div></div>
+                <div class="card"><div class="card-header">Царга верх T2</div><div class="mini-item"><div class="mini-value t2" id="valT2_2">98.9</div><div class="mini-unit">°C</div></div></div>
+                <div class="card"><div class="card-header">Вода T3</div><div class="mini-item"><div class="mini-value t3" id="valT3_2">55.2</div><div class="mini-unit">°C</div></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header">📈 График температур</div>
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: ДАВЛЕНИЕ -->
+        <div class="tab-content" id="tab-pressure">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">📊 Давление</div>
+                    <div class="grid-2x2">
+                        <div class="mini-item"><div class="mini-label">Атмосферное</div><div class="mini-value p0" id="valPressure">755</div><div class="mini-unit">мм рт.ст.</div></div>
+                        <div class="mini-item"><div class="mini-label">Дифф. давление</div><div class="mini-value p1" id="valDP">12</div><div class="mini-unit">Па</div></div>
+                        <div class="mini-item"><div class="mini-label">H₂O кипения</div><div class="mini-value p2" id="valH2O">99.8</div><div class="mini-unit">°C</div></div>
+                        <div class="mini-item"><div class="mini-label">Спирт кипения</div><div class="mini-value p3" id="valEtOH">78.3</div><div class="mini-unit">°C</div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">📈 Давление (история)</div>
+                    <canvas id="pressureChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: РЕГУЛЯТОР -->
+        <div class="tab-content" id="tab-regulator">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">⚡ Параметры сети</div>
+                    <div class="reg-line"><span class="reg-label">Напряжение сети</span><span class="reg-value" id="valU">220 В</span></div>
+                    <div class="reg-line"><span class="reg-label">Напряжение ТЭН</span><span class="reg-value" id="valI">180 В</span></div>
+                    <div class="reg-line"><span class="reg-label">Мощность</span><span class="reg-value" id="valPower">72%</span></div>
+                    <div class="reg-line"><span class="reg-label">Режим</span><span class="mode-badge mode-stab" id="valMode">Стабилизация</span></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">📈 Мощность (история)</div>
+                    <canvas id="powerChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: УПРАВЛЕНИЕ -->
+        <div class="tab-content" id="tab-control">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">🎮 Мощность</div>
+                    <div class="slider-row">
+                        <span style="font-size:0.8em;color:var(--dim);">Мощность ТЭН</span>
+                        <input type="range" min="0" max="250" value="180" id="powerSlider" oninput="updatePower(this.value)">
+                        <span class="slider-value" id="powerValue">180 В</span>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn active" onclick="setMode('heat')">🔥 Разгон</button>
+                        <button class="btn" onclick="setMode('stab')">⚖️ Стабилизация</button>
+                        <button class="btn" onclick="setMode('sel')">💧 Отбор</button>
+                        <button class="btn danger" onclick="setMode('stop')">⏹️ Стоп</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">⚡ Регулятор</div>
+                    <div class="reg-line"><span class="reg-label">Напряжение сети</span><span class="reg-value" id="valU2">220 В</span></div>
+                    <div class="reg-line"><span class="reg-label">Напряжение ТЭН</span><span class="reg-value" id="valI2">180 В</span></div>
+                    <div class="reg-line"><span class="reg-label">Мощность</span><span class="reg-value" id="valPower2">72%</span></div>
+                    <div class="reg-line"><span class="reg-label">Режим</span><span class="mode-badge mode-stab" id="valMode2">Стабилизация</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">PAC-RK Control Panel v3.0 • Demo Mode • Данные симулируются</div>
+
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>⚙️ Настройки</h2>
+            <label>COM-порт</label><select><option>COM3</option><option>COM4</option></select>
+            <label>Скорость</label><select><option>9600</option><option>115200</option></select>
+            <label>Wi-Fi SSID</label><input type="text" value="PAC-RK-Net">
+            <label>Пароль Wi-Fi</label><input type="password" value="********">
+            <div class="modal-buttons"><button onclick="closeModal('settingsModal')">Отмена</button><button class="primary" onclick="closeModal('settingsModal')">Сохранить</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="paramsModal">
+        <div class="modal">
+            <h2>📋 Параметры процесса</h2>
+            <label>Порог T2 (отбор тела)</label><input type="number" value="98.5" step="0.1">
+            <label>Порог T0 (авария куба)</label><input type="number" value="85.0" step="0.1">
+            <label>Скорость отбора (мл/час)</label><input type="number" value="500" step="10">
+            <label>Целевая T3 (вода)</label><input type="number" value="60.0" step="0.5">
+            <div class="modal-buttons"><button onclick="closeModal('paramsModal')">Отмена</button><button class="primary" onclick="closeModal('paramsModal')">Применить</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="limitsModal">
+        <div class="modal">
+            <h2>📊 Пороги аварий</h2>
+            <label>Макс. T0 (куб)</label><input type="number" value="85.0" step="0.1">
+            <label>Макс. T3 (вода)</label><input type="number" value="65.0" step="0.1">
+            <label>Мин. давление</label><input type="number" value="720" step="1">
+            <label>Макс. дифф. давление</label><input type="number" value="50" step="1">
+            <div class="modal-buttons"><button onclick="closeModal('limitsModal')">Отмена</button><button class="primary" onclick="closeModal('limitsModal')">Применить</button></div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        let currentMode = 'stab', currentPower = 180, elapsedSeconds = 0;
+        let simData = { T0:78.3, T1:79.0, T2:98.8, T3:55.0, pressure:755, dp:12, U:220, I:180, power:72, h2o:99.8, etoh:78.3 };
+        let chartLabels=[], chartT0=[], chartT1=[], chartT2=[], chartT3=[];
+        let pressLabels=[], pressData=[], powerLabels=[], powerData=[];
+
+        const tempChart = new Chart(document.getElementById('tempChart').getContext('2d'), {
+            type:'line', data:{labels:chartLabels,datasets:[
+                {label:'T0 Куб',data:chartT0,borderColor:'#e74c3c',backgroundColor:'#e74c3c22',tension:0.3,pointRadius:0,borderWidth:2},
+                {label:'T1 Царга низ',data:chartT1,borderColor:'#f39c12',backgroundColor:'#f39c1222',tension:0.3,pointRadius:0,borderWidth:2},
+                {label:'T2 Царга верх',data:chartT2,borderColor:'#2ecc71',backgroundColor:'#2ecc7122',tension:0.3,pointRadius:0,borderWidth:2.5},
+                {label:'T3 Вода',data:chartT3,borderColor:'#3498db',backgroundColor:'#3498db22',tension:0.3,pointRadius:0,borderWidth:2}
+            ]},
+            options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#888888',usePointStyle:true,padding:15,font:{size:11}}}},scales:{x:{ticks:{color:'#aaaaaa',maxTicksLimit:10},grid:{color:'#e0e0e0'}},y:{ticks:{color:'#aaaaaa'},grid:{color:'#e0e0e0'},min:50,max:105}},animation:{duration:300}}
+        });
+
+        const pressureChart = new Chart(document.getElementById('pressureChart').getContext('2d'), {
+            type:'line', data:{labels:pressLabels,datasets:[{label:'Давление',data:pressData,borderColor:'#9b59b6',backgroundColor:'#9b59b622',tension:0.3,pointRadius:0,borderWidth:2}]},
+            options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#888888',usePointStyle:true}}},scales:{x:{ticks:{color:'#aaaaaa',maxTicksLimit:10},grid:{color:'#e0e0e0'}},y:{ticks:{color:'#aaaaaa'},grid:{color:'#e0e0e0'}}},animation:{duration:300}}
+        });
+
+        const powerChart = new Chart(document.getElementById('powerChart').getContext('2d'), {
+            type:'line', data:{labels:powerLabels,datasets:[{label:'Мощность %',data:powerData,borderColor:'#4a90d9',backgroundColor:'#4a90d922',tension:0.3,pointRadius:0,borderWidth:2,fill:true}]},
+            options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#888888',usePointStyle:true}}},scales:{x:{ticks:{color:'#aaaaaa',maxTicksLimit:10},grid:{color:'#e0e0e0'}},y:{ticks:{color:'#aaaaaa'},grid:{color:'#e0e0e0'},min:0,max:100}},animation:{duration:300}}
+        });
+
+        function simulateData() {
+            elapsedSeconds++;
+            if(currentMode==='heat'){simData.T0+=0.02+Math.random()*0.03;simData.T1+=0.015+Math.random()*0.025;simData.T2+=0.01+Math.random()*0.02;}
+            else{simData.T0+=(Math.random()-0.5)*0.04;simData.T1+=(Math.random()-0.5)*0.03;simData.T2=98.8+(Math.random()-0.5)*0.3;}
+            simData.T3=55.0+(Math.random()-0.5)*1.5;
+            simData.pressure=Math.round(754+Math.random()*2);
+            simData.dp=Math.round(11+Math.random()*2);
+            simData.h2o=+(99.8+(Math.random()-0.5)*0.1).toFixed(1);
+            simData.etoh=+(78.3-(760-simData.pressure)*0.03).toFixed(1);
+            simData.U=219+Math.round(Math.random()*2);
+            simData.I=currentPower;
+            simData.power=Math.round((currentPower/250)*100);
+            simData.T0=Math.min(85,Math.max(20,simData.T0));simData.T1=Math.min(85,Math.max(20,simData.T1));
+            simData.T2=Math.min(105,Math.max(20,simData.T2));simData.T3=Math.min(65,Math.max(30,simData.T3));
+
+            let t=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            chartLabels.push(t);chartT0.push(+simData.T0.toFixed(1));chartT1.push(+simData.T1.toFixed(1));
+            chartT2.push(+simData.T2.toFixed(1));chartT3.push(+simData.T3.toFixed(1));
+            if(chartLabels.length>60){chartLabels.shift();chartT0.shift();chartT1.shift();chartT2.shift();chartT3.shift();}
+            tempChart.update();
+
+            pressLabels.push(t);pressData.push(simData.pressure);
+            if(pressLabels.length>60){pressLabels.shift();pressData.shift();}
+            pressureChart.update();
+
+            powerLabels.push(t);powerData.push(simData.power);
+            if(powerLabels.length>60){powerLabels.shift();powerData.shift();}
+            powerChart.update();
+        }
+
+        function updateUI() {
+            document.getElementById('valT0').textContent=simData.T0.toFixed(1);document.getElementById('valT1_2').textContent=simData.T1.toFixed(1);
+            document.getElementById('valT2_2').textContent=simData.T2.toFixed(1);document.getElementById('valT3_2').textContent=simData.T3.toFixed(1);
+            document.getElementById('valPressure').textContent=simData.pressure;document.getElementById('valDP').textContent=simData.dp;
+            document.getElementById('valH2O').textContent=simData.h2o;document.getElementById('valEtOH').textContent=simData.etoh;
+            document.getElementById('valU').textContent=simData.U+' В';document.getElementById('valI').textContent=simData.I+' В';
+            document.getElementById('valPower').textContent=simData.power+'%';
+            document.getElementById('valU2').textContent=simData.U+' В';document.getElementById('valI2').textContent=simData.I+' В';
+            document.getElementById('valPower2').textContent=simData.power+'%';
+            let st='',mc='',dc='';
+            switch(currentMode){case'heat':st='Разгон';mc='mode-heat';break;case'stab':st='Стабилизация';mc='mode-stab';break;case'sel':st='Отбор';mc='mode-sel';break;case'stop':st='Остановлен';mc='mode-stop';dc='warning';break;}
+            document.getElementById('statusText').textContent=st;
+            document.getElementById('valMode').textContent=st;document.getElementById('valMode').className='mode-badge '+mc;
+            document.getElementById('valMode2').textContent=st;document.getElementById('valMode2').className='mode-badge '+mc;
+            document.getElementById('statusDot').className='status-dot '+dc;
+            let h=Math.floor(elapsedSeconds/3600),m=Math.floor((elapsedSeconds%3600)/60),s=elapsedSeconds%60;
+            document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        }
+
+        function setMode(m){currentMode=m;document.querySelectorAll('#tab-control .btn').forEach(b=>b.classList.remove('active'));if(m==='heat')document.querySelector('#tab-control .btn:nth-child(1)').classList.add('active');if(m==='stab')document.querySelector('#tab-control .btn:nth-child(2)').classList.add('active');if(m==='sel')document.querySelector('#tab-control .btn:nth-child(3)').classList.add('active');}
+        function updatePower(v){currentPower=parseInt(v);simData.I=currentPower;simData.power=Math.round((currentPower/250)*100);document.getElementById('powerValue').textContent=v+' В';}
+
+        setInterval(()=>{simulateData();updateUI();},1000);
+        updateUI();
+    </script>
+</body>
+</html>
