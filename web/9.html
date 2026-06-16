@@ -616,7 +616,7 @@
 
         <!-- ГРАФИКИ -->
         <div class="chart-card">
-            <div class="card-header">📈 График температур (колесо мыши = масштаб по Y)</div>
+            <div class="card-header">📈 График температур (колесо = масштаб Y, автоцентровка)</div>
             <div class="chart-legend">
                 <label><input type="checkbox" checked onchange="toggleDataset(0,'temp')"> <span style="color:var(--t0)">■</span> T0 Куб</label>
                 <label><input type="checkbox" checked onchange="toggleDataset(1,'temp')"> <span style="color:var(--t1)">■</span> T1 Царга низ</label>
@@ -627,7 +627,7 @@
         </div>
 
         <div class="chart-card">
-            <div class="card-header">📊 График атмосферного давления (колесо мыши = масштаб по Y)</div>
+            <div class="card-header">📊 График атмосферного давления (колесо = масштаб Y, автоцентровка)</div>
             <div class="chart-toggle-row" style="margin-bottom:6px;">
                 <label><input type="checkbox" checked onchange="toggleChartCard('pressureCard')"> Показывать график</label>
             </div>
@@ -637,7 +637,7 @@
         </div>
 
         <div class="chart-card">
-            <div class="card-header">🔬 График дифф. давления XGZP (колесо мыши = масштаб по Y)</div>
+            <div class="card-header">🔬 График дифф. давления XGZP (колесо = масштаб Y, автоцентровка)</div>
             <div class="chart-toggle-row" style="margin-bottom:6px;">
                 <label><input type="checkbox" checked onchange="toggleChartCard('xgapCard')"> Показывать график</label>
             </div>
@@ -646,7 +646,7 @@
             </div>
         </div>
 
-        <div class="footer">PAC-RK Control Panel v2.1 • Demo Mode</div>
+        <div class="footer">PAC-RK Control Panel v2.2 • Demo Mode</div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ДАТЧИКА -->
@@ -804,9 +804,16 @@
                 maintainAspectRatio: true,
                 plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
                             pinch: { enabled: true }, mode: 'y' } } },
-                scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 },
-                        grid: { color: '#21262d' } }, y: { ticks: { color: '#484f58' },
-                        grid: { color: '#21262d' }, min: 50, max: 105 } },
+                scales: {
+                    x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
+                    y: {
+                        type: 'logarithmic',
+                        ticks: { color: '#484f58' },
+                        grid: { color: '#21262d' },
+                        min: 50,
+                        max: 105
+                    }
+                },
             animation: { duration: 300 }
         }
     });
@@ -843,6 +850,27 @@ xgapChart = new Chart(xgapCtx, {
             y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } },
     animation: { duration: 300 }
 }
+});
+
+// Центрирование графиков после зума
+[tempChart, pressureChart, xgapChart].forEach(chart => {
+chart.canvas.addEventListener('wheel', () => {
+setTimeout(() => {
+const visibleDatasets = chart.data.datasets.filter((_, i) => chart.isDatasetVisible(
+    i));
+if (visibleDatasets.length === 0) return;
+let allValues = [];
+visibleDatasets.forEach(ds => { allValues = allValues.concat(ds.data.filter(v => v !==
+        null && v !== undefined)); });
+if (allValues.length === 0) return;
+const min = Math.min(...allValues);
+const max = Math.max(...allValues);
+const padding = (max - min) * 0.1;
+chart.options.scales.y.min = min - padding;
+chart.options.scales.y.max = max + padding;
+chart.update();
+}, 100);
+});
 });
 }
 
@@ -911,7 +939,8 @@ addToHistory('P', simData.pressure);
 addToHistory('dP', simData.dp);
 addToHistory('H2O', simData.h2o);
 addToHistory('EtOH', simData.etoh);
-let t = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+let t = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit',
+second: '2-digit' });
 allData.push({ time: Date.now(), label: t, T0: +simData.T0.toFixed(1), T1: +simData.T1.toFixed(1),
     T2: +simData.T2.toFixed(1), T3: +simData.T3.toFixed(1), P: simData.pressure, dP: simData
     .dp });
