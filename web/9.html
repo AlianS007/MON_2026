@@ -298,6 +298,12 @@
         .chart-card canvas {
             max-height: 300px;
         }
+        .chart-card.temp canvas {
+            max-height: 450px;
+        }
+        .chart-card.pressure canvas {
+            max-height: 150px;
+        }
         .chart-legend {
             display: flex;
             flex-wrap: wrap;
@@ -597,7 +603,7 @@
             </div>
         </div>
 
-        <!-- ВРЕМЕННАЯ ШКАЛА (общая для всех графиков) -->
+        <!-- ВРЕМЕННАЯ ШКАЛА -->
         <div class="chart-card">
             <div class="card-header">⏱️ Временная шкала (для всех графиков)</div>
             <div class="time-scale" id="timeScale">
@@ -614,9 +620,9 @@
             </div>
         </div>
 
-        <!-- ГРАФИКИ -->
-        <div class="chart-card">
-            <div class="card-header">📈 График температур (колесо = масштаб Y, автоцентровка)</div>
+        <!-- ГРАФИК ТЕМПЕРАТУР -->
+        <div class="chart-card temp">
+            <div class="card-header">📈 График температур</div>
             <div class="chart-legend">
                 <label><input type="checkbox" checked onchange="toggleDataset(0,'temp')"> <span style="color:var(--t0)">■</span> T0 Куб</label>
                 <label><input type="checkbox" checked onchange="toggleDataset(1,'temp')"> <span style="color:var(--t1)">■</span> T1 Царга низ</label>
@@ -626,18 +632,9 @@
             <canvas id="tempChart"></canvas>
         </div>
 
-        <div class="chart-card">
-            <div class="card-header">📊 График атмосферного давления (колесо = масштаб Y, автоцентровка)</div>
-            <div class="chart-toggle-row" style="margin-bottom:6px;">
-                <label><input type="checkbox" checked onchange="toggleChartCard('pressureCard')"> Показывать график</label>
-            </div>
-            <div id="pressureCard">
-                <canvas id="pressureChart"></canvas>
-            </div>
-        </div>
-
-        <div class="chart-card">
-            <div class="card-header">🔬 График дифф. давления XGZP (колесо = масштаб Y, автоцентровка)</div>
+        <!-- ГРАФИК XGZP -->
+        <div class="chart-card pressure">
+            <div class="card-header">🔬 График дифф. давления XGZP</div>
             <div class="chart-toggle-row" style="margin-bottom:6px;">
                 <label><input type="checkbox" checked onchange="toggleChartCard('xgapCard')"> Показывать график</label>
             </div>
@@ -646,7 +643,18 @@
             </div>
         </div>
 
-        <div class="footer">PAC-RK Control Panel v2.2 • Demo Mode</div>
+        <!-- ГРАФИК АТМОСФЕРНОГО ДАВЛЕНИЯ -->
+        <div class="chart-card pressure">
+            <div class="card-header">📊 График атмосферного давления</div>
+            <div class="chart-toggle-row" style="margin-bottom:6px;">
+                <label><input type="checkbox" checked onchange="toggleChartCard('pressureCard')"> Показывать график</label>
+            </div>
+            <div id="pressureCard">
+                <canvas id="pressureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="footer">PAC-RK Control Panel v2.6 • Demo Mode</div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ДАТЧИКА -->
@@ -781,7 +789,12 @@
     let allData = [];
     let tempChart, pressureChart, xgapChart;
 
-    function initCharts() {
+    function toggleChartCard(cardId) {
+        const card = document.getElementById(cardId);
+        card.style.display = card.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function initCharts() {}
         const tempCtx = document.getElementById('tempChart').getContext('2d');
         tempChart = new Chart(tempCtx, {
             type: 'line',
@@ -803,76 +816,77 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
-                            pinch: { enabled: true }, mode: 'y' } } },
-                scales: {
-                    x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
-                    y: {
-                        type: 'logarithmic',
-                        ticks: { color: '#484f58' },
-                        grid: { color: '#21262d' },
-                        min: 50,
-                        max: 105
-                    }
-                },
+                            pinch: { enabled: true }, mode: 'xy' } } },
+                scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 },
+                        grid: { color: '#21262d' } }, y: { ticks: { color: '#484f58' },
+                        grid: { color: '#21262d' }, min: 50, max: 105 } },
             animation: { duration: 300 }
         }
     });
 
-    const pressCtx = document.getElementById('pressureChart').getContext('2d');
-    pressureChart = new Chart(pressCtx, {
+    const xgapCtx = document.getElementById('xgapChart').getContext('2d');
+    xgapChart = new Chart(xgapCtx, {
         type: 'line',
-        data: { labels: [], datasets: [{ data: [], borderColor: '#bc8cff',
-                backgroundColor: '#bc8cff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
-                label: 'P' }] },
+        data: { labels: [], datasets: [{ data: [], borderColor: '#79c0ff',
+                backgroundColor: '#79c0ff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
+                label: 'dP' }] },
         options: {
             responsive: true,
             maintainAspectRatio: true,
             plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
-                        pinch: { enabled: true }, mode: 'y' } } },
+                        pinch: { enabled: true }, mode: 'xy' } } },
             scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
                 y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } },
         animation: { duration: 300 }
     }
 });
 
-const xgapCtx = document.getElementById('xgapChart').getContext('2d');
-xgapChart = new Chart(xgapCtx, {
+const pressCtx = document.getElementById('pressureChart').getContext('2d');
+pressureChart = new Chart(pressCtx, {
     type: 'line',
-    data: { labels: [], datasets: [{ data: [], borderColor: '#79c0ff',
-            backgroundColor: '#79c0ff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
-            label: 'dP' }] },
+    data: { labels: [], datasets: [{ data: [], borderColor: '#bc8cff',
+            backgroundColor: '#bc8cff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
+            label: 'P' }] },
     options: {
         responsive: true,
         maintainAspectRatio: true,
         plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
-                    pinch: { enabled: true }, mode: 'y' } } },
+                    pinch: { enabled: true }, mode: 'xy' } } },
         scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
             y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } },
     animation: { duration: 300 }
 }
 });
 
-// Центрирование графиков после зума
-[tempChart, pressureChart, xgapChart].forEach(chart => {
-chart.canvas.addEventListener('wheel', () => {
+// Центрирование графиков после зума (исправлено)
+function centerChart(chart) {
 setTimeout(() => {
-const visibleDatasets = chart.data.datasets.filter((_, i) => chart.isDatasetVisible(
-    i));
+const visibleDatasets = chart.data.datasets.filter((_, i) => chart.isDatasetVisible(i));
 if (visibleDatasets.length === 0) return;
 let allValues = [];
-visibleDatasets.forEach(ds => { allValues = allValues.concat(ds.data.filter(v => v !==
-        null && v !== undefined)); });
+visibleDatasets.forEach(ds => {
+const vals = ds.data.filter(v => v !== null && v !== undefined && !isNaN(v));
+if (vals.length > 0) allValues = allValues.concat(vals);
+});
 if (allValues.length === 0) return;
 const min = Math.min(...allValues);
 const max = Math.max(...allValues);
-const padding = (max - min) * 0.1;
+const range = max - min;
+if (range < 0.1) {
+chart.options.scales.y.min = min - 1;
+chart.options.scales.y.max = max + 1;
+} else {
+const padding = range * 0.15;
 chart.options.scales.y.min = min - padding;
 chart.options.scales.y.max = max + padding;
+}
 chart.update();
 }, 100);
-});
-});
 }
+
+[tempChart, pressureChart, xgapChart].forEach(chart => {
+chart.canvas.addEventListener('wheel', () => centerChart(chart));
+});
 
 function setTimeWindow(minutes) {
 timeWindowMinutes = minutes;
@@ -886,30 +900,34 @@ const chart = chartName === 'temp' ? tempChart : (chartName === 'pressure' ? pre
     xgapChart);
 if (chart.isDatasetVisible(index)) chart.hide(index);
 else chart.show(index);
-chart.update();
-}
-
-function toggleChartCard(cardId) {
-const card = document.getElementById(cardId);
-card.style.display = card.style.display === 'none' ? 'block' : 'none';
+centerChart(chart);
 }
 
 function updateAllCharts() {
 const cutoff = Date.now() - timeWindowMinutes * 60 * 1000;
 const filtered = allData.filter(d => d.time >= cutoff);
 const labels = filtered.map(d => d.label);
+const T0 = filtered.map(d => d.T0);
+const T1 = filtered.map(d => d.T1);
+const T2 = filtered.map(d => d.T2);
+const T3 = filtered.map(d => d.T3);
+const dP = filtered.map(d => d.dP);
+const P = filtered.map(d => d.P);
+
 tempChart.data.labels = labels;
-tempChart.data.datasets[0].data = filtered.map(d => d.T0);
-tempChart.data.datasets[1].data = filtered.map(d => d.T1);
-tempChart.data.datasets[2].data = filtered.map(d => d.T2);
-tempChart.data.datasets[3].data = filtered.map(d => d.T3);
+tempChart.data.datasets[0].data = T0;
+tempChart.data.datasets[1].data = T1;
+tempChart.data.datasets[2].data = T2;
+tempChart.data.datasets[3].data = T3;
 tempChart.update();
-pressureChart.data.labels = labels;
-pressureChart.data.datasets[0].data = filtered.map(d => d.P);
-pressureChart.update();
+
 xgapChart.data.labels = labels;
-xgapChart.data.datasets[0].data = filtered.map(d => d.dP);
+xgapChart.data.datasets[0].data = dP;
 xgapChart.update();
+
+pressureChart.data.labels = labels;
+pressureChart.data.datasets[0].data = P;
+pressureChart.update();
 }
 
 function simulateData() {
