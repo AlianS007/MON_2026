@@ -6,6 +6,8 @@
     <title>PAC-RK Control Panel</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js">
+    </script>
     <style>
         :root {
             --bg: #0d1117;
@@ -37,28 +39,26 @@
             color: var(--text);
             font-family: var(--font);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
+            padding: 16px;
         }
         .app {
             width: 100%;
-            max-width: 1200px;
+            max-width: 100%;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding: 14px 20px;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 12px 18px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
         }
         .header h1 {
-            font-size: 1.5em;
+            font-size: 1.4em;
             font-weight: 700;
             letter-spacing: 2px;
             color: var(--accent);
@@ -66,14 +66,14 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             flex-wrap: wrap;
         }
         .status-badge {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         .status-dot {
             width: 10px;
@@ -99,15 +99,15 @@
             background: var(--danger);
         }
         .clock-text {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: var(--dim);
         }
         .icon-btn {
             background: none;
             border: 1px solid var(--border);
             color: var(--dim);
-            font-size: 1.1em;
-            padding: 6px 10px;
+            font-size: 1em;
+            padding: 5px 9px;
             border-radius: 6px;
             cursor: pointer;
             transition: 0.2s;
@@ -117,47 +117,54 @@
             border-color: var(--accent);
         }
 
-        .grid-3 {
+        .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px;
+            padding: 12px;
         }
         .card-header {
-            font-size: 0.7em;
+            font-size: 0.68em;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--dim);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 7px;
         }
         .mini-item {
             background: #0d1117;
             border-radius: 8px;
-            padding: 10px;
+            padding: 9px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .mini-item:hover {
+            border-color: var(--accent);
+            background: #1a1f2b;
         }
         .mini-label {
-            font-size: 0.62em;
+            font-size: 0.6em;
             color: var(--dim);
             text-transform: uppercase;
         }
         .mini-value {
-            font-size: 1.5em;
+            font-size: 1.4em;
             font-weight: 700;
         }
         .mini-unit {
-            font-size: 0.4em;
+            font-size: 0.38em;
             color: var(--dim);
         }
         .t0 {
@@ -189,8 +196,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 3px 0;
-            font-size: 0.8em;
+            padding: 2px 0;
+            font-size: 0.78em;
         }
         .reg-label {
             color: var(--dim);
@@ -200,9 +207,9 @@
         }
         .mode-badge {
             display: inline-block;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 4px;
-            font-size: 0.7em;
+            font-size: 0.68em;
             font-weight: 600;
         }
         .mode-heat {
@@ -227,13 +234,13 @@
         }
         .divider {
             border-top: 1px solid var(--border);
-            margin: 8px 0;
+            margin: 7px 0;
         }
         .slider-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+            gap: 7px;
+            margin-bottom: 5px;
         }
         .slider-row input[type="range"] {
             flex: 1;
@@ -242,9 +249,9 @@
         .slider-val {
             font-weight: 700;
             color: var(--accent);
-            min-width: 40px;
+            min-width: 38px;
             text-align: right;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         .btn-row {
             display: flex;
@@ -252,12 +259,12 @@
         }
         .btn {
             flex: 1;
-            padding: 7px 3px;
+            padding: 6px 3px;
             border: 1px solid var(--border);
             border-radius: 5px;
             background: #0d1117;
             color: var(--text);
-            font-size: 0.68em;
+            font-size: 0.65em;
             cursor: pointer;
             transition: 0.2s;
             text-align: center;
@@ -276,22 +283,81 @@
             color: var(--danger);
         }
 
+        .charts-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
         .chart-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 16px;
+            padding: 12px;
         }
         .chart-card canvas {
-            max-height: 350px;
+            max-height: 300px;
         }
-
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.68em;
+        }
+        .chart-legend label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: var(--dim);
+        }
+        .chart-legend input {
+            accent-color: var(--accent);
+        }
+        .time-scale {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .time-btn {
+            padding: 2px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: #0d1117;
+            color: var(--dim);
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .time-btn.active {
+            background: #58a6ff22;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .time-btn:hover {
+            border-color: var(--accent);
+        }
+        .chart-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chart-toggle-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.65em;
+            color: var(--dim);
+        }
         .footer {
             text-align: center;
-            font-size: 0.68em;
+            font-size: 0.65em;
             color: var(--dim);
-            padding: 8px;
+            padding: 6px;
         }
 
         .modal-overlay {
@@ -313,42 +379,44 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 22px;
+            padding: 20px;
             width: 90%;
-            max-width: 440px;
+            max-width: 520px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal h2 {
-            font-size: 1.1em;
+            font-size: 1em;
             color: var(--accent);
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         .modal label {
             display: block;
-            font-size: 0.72em;
+            font-size: 0.7em;
             color: var(--dim);
-            margin: 10px 0 4px;
+            margin: 8px 0 3px;
             text-transform: uppercase;
         }
         .modal input,
         .modal select {
             width: 100%;
-            padding: 8px;
+            padding: 7px;
             background: #0d1117;
             border: 1px solid var(--border);
             border-radius: 6px;
             color: var(--text);
             font-family: inherit;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         .modal-buttons {
             display: flex;
             gap: 8px;
             justify-content: flex-end;
-            margin-top: 18px;
+            margin-top: 16px;
         }
         .modal-buttons button {
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 6px;
             border: 1px solid var(--border);
             background: #0d1117;
@@ -362,14 +430,111 @@
             color: #fff;
             font-weight: 600;
         }
+        .temp-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .temp-modal-item {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .temp-modal-label {
+            font-size: 0.6em;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+        .temp-modal-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        .sensor-config {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .switch-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 0.75em;
+        }
+        .switch-row label {
+            margin: 0;
+            text-transform: none;
+            font-size: 0.9em;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            display: inline-block;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #30363d;
+            border-radius: 22px;
+            transition: 0.3s;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background: #8b949e;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        input:checked+.toggle-slider {
+            background: #58a6ff;
+        }
+        input:checked+.toggle-slider:before {
+            transform: translateX(18px);
+            background: #fff;
+        }
+        .command-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 0.78em;
+            border-bottom: 1px solid #1a1f2b;
+        }
+        .command-row:last-child {
+            border-bottom: none;
+        }
+        .command-name {
+            color: var(--dim);
+        }
+        .command-value {
+            font-family: 'Consolas', monospace;
+            color: var(--accent);
+            font-size: 0.85em;
+        }
 
-        @media (max-width: 800px) {
-            .grid-3 {
+        @media (max-width: 900px) {
+            .dashboard-grid {
                 grid-template-columns: 1fr 1fr;
             }
         }
-        @media (max-width: 500px) {
-            .grid-3 {
+        @media (max-width: 600px) {
+            .dashboard-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -378,334 +543,437 @@
 <body>
     <div class="app">
 
-        <!-- ШАПКА -->
         <div class="header">
             <h1>⚗️ PAC-RK</h1>
             <div class="header-right">
                 <div class="status-badge">
                     <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">Ожидание данных...</span>
+                    <span id="statusText">Стабилизация</span>
                 </div>
-                <span class="clock-text" id="clock">--:--:--</span>
+                <span class="clock-text" id="clock">00:00:00</span>
                 <button class="icon-btn" onclick="openModal('settingsModal')" title="Настройки">⚙️</button>
                 <button class="icon-btn" onclick="openModal('paramsModal')" title="Параметры">📋</button>
                 <button class="icon-btn" onclick="openModal('limitsModal')" title="Пороги">📊</button>
             </div>
         </div>
 
-        <!-- ТРИ КОЛОНКИ -->
-        <div class="grid-3">
-
-            <!-- Температуры -->
+        <div class="dashboard-grid">
             <div class="card">
                 <div class="card-header">🌡️ Температуры</div>
                 <div class="grid-2x2">
-                    <div class="mini-item"><div class="mini-label">Куб T0</div><div class="mini-value t0" id="valT0">--</div><div class="mini-unit">°C</div></div>
-                    <div class="mini-item"><div class="mini-label">Царга низ T1</div><div class="mini-value t1" id="valT1">--</div><div class="mini-unit">°C</div></div>
-                    <div class="mini-item"><div class="mini-label">Царга верх T2</div><div class="mini-value t2" id="valT2">--</div><div class="mini-unit">°C</div></div>
-                    <div class="mini-item"><div class="mini-label">Вода T3</div><div class="mini-value t3" id="valT3">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('T0')"><div class="mini-label">Куб T0</div><div class="mini-value t0" id="valT0">78.5</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('T1')"><div class="mini-label">Царга низ T1</div><div class="mini-value t1" id="valT1">79.1</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('T2')"><div class="mini-label">Царга верх T2</div><div class="mini-value t2" id="valT2">98.9</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('T3')"><div class="mini-label">Вода T3</div><div class="mini-value t3" id="valT3">55.2</div><div class="mini-unit">°C</div></div>
                 </div>
             </div>
-
-            <!-- Давление -->
             <div class="card">
                 <div class="card-header">📊 Давление</div>
                 <div class="grid-2x2">
-                    <div class="mini-item"><div class="mini-label">Атмосферное</div><div class="mini-value p0" id="valPressure">--</div><div class="mini-unit">мм рт.ст.</div></div>
-                    <div class="mini-item"><div class="mini-label">Дифф. давление</div><div class="mini-value p1" id="valDP">--</div><div class="mini-unit">Па</div></div>
-                    <div class="mini-item"><div class="mini-label">H₂O кипения</div><div class="mini-value p2" id="valH2O">--</div><div class="mini-unit">°C</div></div>
-                    <div class="mini-item"><div class="mini-label">Спирт кипения</div><div class="mini-value p3" id="valEtOH">--</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('P')"><div class="mini-label">Атмосферное</div><div class="mini-value p0" id="valPressure">755</div><div class="mini-unit">мм рт.ст.</div></div>
+                    <div class="mini-item" onclick="openSensorModal('dP')"><div class="mini-label">Дифф. давление</div><div class="mini-value p1" id="valDP">12</div><div class="mini-unit">Па</div></div>
+                    <div class="mini-item" onclick="openSensorModal('H2O')"><div class="mini-label">H₂O кипения</div><div class="mini-value p2" id="valH2O">99.8</div><div class="mini-unit">°C</div></div>
+                    <div class="mini-item" onclick="openSensorModal('EtOH')"><div class="mini-label">Спирт кипения</div><div class="mini-value p3" id="valEtOH">78.3</div><div class="mini-unit">°C</div></div>
                 </div>
             </div>
-
-            <!-- Регулятор + Управление -->
             <div class="card">
                 <div class="card-header">⚡ Регулятор и управление</div>
-
-                <div class="reg-line"><span class="reg-label">Сеть</span><span class="reg-value" id="valU">-- В</span></div>
-                <div class="reg-line"><span class="reg-label">ТЭН</span><span class="reg-value" id="valI">-- В</span></div>
-                <div class="reg-line"><span class="reg-label">Мощность</span><span class="reg-value" id="valPower">--%</span></div>
-                <div class="reg-line"><span class="reg-label">Режим</span><span class="mode-badge mode-stop" id="valMode">Нет данных</span></div>
-
+                <div class="reg-line"><span class="reg-label">Сеть</span><span class="reg-value" id="valU">220 В</span></div>
+                <div class="reg-line"><span class="reg-label">ТЭН</span><span class="reg-value" id="valI">180 В</span></div>
+                <div class="reg-line"><span class="reg-label">Мощность</span><span class="reg-value" id="valPower">72%</span></div>
+                <div class="reg-line"><span class="reg-label">Режим</span><span class="mode-badge mode-stab" id="valMode">Стабилизация</span></div>
                 <div class="divider"></div>
-
                 <div class="slider-row">
-                    <span style="font-size:0.68em;color:var(--dim);">Мощность</span>
-                    <input type="range" min="0" max="250" value="0" id="powerSlider" oninput="updatePowerSlider(this.value)">
-                    <span class="slider-val" id="powerValue">0 В</span>
+                    <span style="font-size:0.65em;color:var(--dim);">Мощность</span>
+                    <input type="range" min="0" max="250" value="180" id="powerSlider" oninput="updatePower(this.value)">
+                    <span class="slider-val" id="powerValue">180 В</span>
                 </div>
-
                 <div class="btn-row">
-                    <button class="btn" onclick="sendCommand('MODE:RUN')">🔥 Разгон</button>
-                    <button class="btn" onclick="sendCommand('MODE:STAB')">⚖️ Стаб.</button>
-                    <button class="btn" onclick="sendCommand('MODE:SEL')">💧 Отбор</button>
-                    <button class="btn danger" onclick="sendCommand('MODE:STOP')">⏹️ Стоп</button>
+                    <button class="btn active" onclick="setMode('heat')">🔥 Разгон</button>
+                    <button class="btn" onclick="setMode('stab')">⚖️ Стаб.</button>
+                    <button class="btn" onclick="setMode('sel')">💧 Отбор</button>
+                    <button class="btn danger" onclick="setMode('stop')">⏹️ Стоп</button>
                 </div>
             </div>
-
         </div>
 
-        <!-- ГРАФИК -->
+        <!-- ВРЕМЕННАЯ ШКАЛА (общая для всех графиков) -->
         <div class="chart-card">
-            <div class="card-header">📈 График температур</div>
+            <div class="card-header">⏱️ Временная шкала (для всех графиков)</div>
+            <div class="time-scale" id="timeScale">
+                <button class="time-btn active" onclick="setTimeWindow(5)">5 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(10)">10 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(20)">20 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(30)">30 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(45)">45 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(60)">60 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(90)">90 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(120)">120 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(240)">240 мин</button>
+                <button class="time-btn" onclick="setTimeWindow(450)">450 мин</button>
+            </div>
+        </div>
+
+        <!-- ГРАФИКИ -->
+        <div class="chart-card">
+            <div class="card-header">📈 График температур (колесо мыши = масштаб по Y)</div>
+            <div class="chart-legend">
+                <label><input type="checkbox" checked onchange="toggleDataset(0,'temp')"> <span style="color:var(--t0)">■</span> T0 Куб</label>
+                <label><input type="checkbox" checked onchange="toggleDataset(1,'temp')"> <span style="color:var(--t1)">■</span> T1 Царга низ</label>
+                <label><input type="checkbox" checked onchange="toggleDataset(2,'temp')"> <span style="color:var(--t2)">■</span> T2 Царга верх</label>
+                <label><input type="checkbox" checked onchange="toggleDataset(3,'temp')"> <span style="color:var(--t3)">■</span> T3 Вода</label>
+            </div>
             <canvas id="tempChart"></canvas>
         </div>
 
-        <div class="footer">PAC-RK Control Panel v2.0 • Данные загружаются с сервера</div>
+        <div class="chart-card">
+            <div class="card-header">📊 График атмосферного давления (колесо мыши = масштаб по Y)</div>
+            <div class="chart-toggle-row" style="margin-bottom:6px;">
+                <label><input type="checkbox" checked onchange="toggleChartCard('pressureCard')"> Показывать график</label>
+            </div>
+            <div id="pressureCard">
+                <canvas id="pressureChart"></canvas>
+            </div>
+        </div>
 
+        <div class="chart-card">
+            <div class="card-header">🔬 График дифф. давления XGZP (колесо мыши = масштаб по Y)</div>
+            <div class="chart-toggle-row" style="margin-bottom:6px;">
+                <label><input type="checkbox" checked onchange="toggleChartCard('xgapCard')"> Показывать график</label>
+            </div>
+            <div id="xgapCard">
+                <canvas id="xgapChart"></canvas>
+            </div>
+        </div>
+
+        <div class="footer">PAC-RK Control Panel v2.1 • Demo Mode</div>
     </div>
 
-    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <!-- МОДАЛЬНОЕ ОКНО ДАТЧИКА -->
+    <div class="modal-overlay" id="sensorModal">
+        <div class="modal">
+            <h2 id="sensorModalTitle">📊 Датчик</h2>
+            <div class="temp-modal-grid">
+                <div class="temp-modal-item"><div class="temp-modal-label">Текущее</div><div class="temp-modal-value" id="sensorCurrent">--</div></div>
+                <div class="temp-modal-item"><div class="temp-modal-label">Мин.</div><div class="temp-modal-value" id="sensorMin">--</div></div>
+                <div class="temp-modal-item"><div class="temp-modal-label">Макс.</div><div class="temp-modal-value" id="sensorMax">--</div></div>
+                <div class="temp-modal-item"><div class="temp-modal-label">Среднее</div><div class="temp-modal-value" id="sensorAvg">--</div></div>
+            </div>
+            <canvas id="sensorChart" style="max-height:180px;"></canvas>
+            <div class="sensor-config">
+                <h3 style="font-size:0.8em;color:var(--dim);margin-bottom:6px;">📋 Команды датчика</h3>
+                <div class="command-row"><span class="command-name">Запрос значения</span><span class="command-value">GET_#sensor#</span></div>
+                <div class="command-row"><span class="command-name">Установка порога MAX</span><span class="command-value">SET_#sensor#_MAX:85.0</span></div>
+                <div class="command-row"><span class="command-name">Установка порога MIN</span><span class="command-value">SET_#sensor#_MIN:10.0</span></div>
+                <div class="command-row"><span class="command-name">Звук при аварии</span><span class="command-value">SET_#sensor#_ALARM:ON</span></div>
+                <div class="command-row"><span class="command-name">Отображение на графике</span><span class="command-value">SET_#sensor#_CHART:ON</span></div>
+            </div>
+            <div class="sensor-config" style="margin-top:8px;">
+                <h3 style="font-size:0.8em;color:var(--dim);margin-bottom:6px;">⚙️ Быстрые настройки</h3>
+                <div class="switch-row">
+                    <label>Звук при аварии</label>
+                    <label class="toggle-switch"><input type="checkbox" id="sensorAlarmSound" checked><span class="toggle-slider"></span></label>
+                </div>
+                <div class="switch-row">
+                    <label>Отображать на графике</label>
+                    <label class="toggle-switch"><input type="checkbox" id="sensorShowOnChart" checked><span class="toggle-slider"></span></label>
+                </div>
+                <label>Порог аварии (макс.)</label>
+                <input type="number" id="sensorAlarmMax" value="85.0" step="0.5">
+                <label>Порог предупреждения</label>
+                <input type="number" id="sensorWarnMax" value="80.0" step="0.5">
+            </div>
+            <div class="modal-buttons" style="margin-top:12px;">
+                <button onclick="closeModal('sensorModal')">Закрыть</button>
+                <button class="primary" onclick="saveSensorConfig()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА НАСТРОЕК -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
-            <label>COM-порт</label>
-            <select><option>COM3</option><option>COM4</option></select>
-            <label>Скорость</label>
-            <select><option>9600</option><option>115200</option></select>
-            <label>Wi-Fi SSID</label>
-            <input type="text" value="PAC-RK-Net">
-            <label>Пароль Wi-Fi</label>
-            <input type="password" value="********">
-            <div class="modal-buttons">
-                <button onclick="closeModal('settingsModal')">Отмена</button>
-                <button class="primary" onclick="closeModal('settingsModal')">Сохранить</button>
-            </div>
+            <label>COM-порт</label><select><option>COM3</option><option>COM4</option></select>
+            <label>Скорость</label><select><option>9600</option><option>115200</option></select>
+            <label>Wi-Fi SSID</label><input type="text" value="PAC-RK-Net">
+            <label>Пароль Wi-Fi</label><input type="password" value="********">
+            <div class="modal-buttons"><button onclick="closeModal('settingsModal')">Отмена</button><button class="primary" onclick="closeModal('settingsModal')">Сохранить</button></div>
         </div>
     </div>
-
     <div class="modal-overlay" id="paramsModal">
         <div class="modal">
             <h2>📋 Параметры процесса</h2>
-            <label>Порог T2 (отбор тела)</label>
-            <input type="number" value="98.5" step="0.1">
-            <label>Порог T0 (авария куба)</label>
-            <input type="number" value="85.0" step="0.1">
-            <label>Скорость отбора (мл/час)</label>
-            <input type="number" value="500" step="10">
-            <label>Целевая T3 (вода)</label>
-            <input type="number" value="60.0" step="0.5">
-            <div class="modal-buttons">
-                <button onclick="closeModal('paramsModal')">Отмена</button>
-                <button class="primary" onclick="closeModal('paramsModal')">Применить</button>
-            </div>
+            <label>Порог T2 (отбор тела)</label><input type="number" value="98.5" step="0.1">
+            <label>Порог T0 (авария куба)</label><input type="number" value="85.0" step="0.1">
+            <label>Скорость отбора (мл/час)</label><input type="number" value="500" step="10">
+            <label>Целевая T3 (вода)</label><input type="number" value="60.0" step="0.5">
+            <div class="modal-buttons"><button onclick="closeModal('paramsModal')">Отмена</button><button class="primary" onclick="closeModal('paramsModal')">Применить</button></div>
         </div>
     </div>
-
     <div class="modal-overlay" id="limitsModal">
         <div class="modal">
             <h2>📊 Пороги аварий</h2>
-            <label>Макс. T0 (куб)</label>
-            <input type="number" value="85.0" step="0.1">
-            <label>Макс. T3 (вода)</label>
-            <input type="number" value="65.0" step="0.1">
-            <label>Мин. давление</label>
-            <input type="number" value="720" step="1">
-            <label>Макс. дифф. давление</label>
-            <input type="number" value="50" step="1">
-            <div class="modal-buttons">
-                <button onclick="closeModal('limitsModal')">Отмена</button>
-                <button class="primary" onclick="closeModal('limitsModal')">Применить</button>
-            </div>
+            <label>Макс. T0 (куб)</label><input type="number" value="85.0" step="0.1">
+            <label>Макс. T3 (вода)</label><input type="number" value="65.0" step="0.1">
+            <label>Мин. давление</label><input type="number" value="720" step="1">
+            <label>Макс. дифф. давление</label><input type="number" value="50" step="1">
+            <div class="modal-buttons"><button onclick="closeModal('limitsModal')">Отмена</button><button class="primary" onclick="closeModal('limitsModal')">Применить</button></div>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // НАСТРОЙКИ ПОДКЛЮЧЕНИЯ К СЕРВЕРУ
-        // ============================================================
-        const API_URL = 'https://ваш-сайт.ru/pac-rk/api.php'; // ← ЗАМЕНИТЕ НА СВОЙ URL
-
-        // ============================================================
-        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-        // ============================================================
-        let currentData = null;
-        let chartLabels = [];
-        let chartT0 = [];
-        let chartT1 = [];
-        let chartT2 = [];
-        let chartT3 = [];
-        let startTime = Date.now();
-
-        // ============================================================
-        // ИНИЦИАЛИЗАЦИЯ ГРАФИКА
-        // ============================================================
-        const ctx = document.getElementById('tempChart').getContext('2d');
-        const tempChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartLabels,
-                datasets: [
-                    { label: 'T0 Куб', data: chartT0, borderColor: '#f85149',
-                        backgroundColor: '#f8514922', tension: 0.3, pointRadius: 0, borderWidth: 2 },
-                    { label: 'T1 Царга низ', data: chartT1, borderColor: '#f0883e',
-                        backgroundColor: '#f0883e22', tension: 0.3, pointRadius: 0, borderWidth: 2 },
-                    { label: 'T2 Царга верх', data: chartT2, borderColor: '#f0c040',
-                        backgroundColor: '#f0c04022', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
-                    { label: 'T3 Вода', data: chartT3, borderColor: '#58a6ff',
-                        backgroundColor: '#58a6ff22', tension: 0.3, pointRadius: 0, borderWidth: 2 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        labels: { color: '#8b949e', usePointStyle: true, padding: 15,
-                            font: { size: 11 } }
-                    }
-                },
-                scales: {
-                    x: { ticks: { color: '#484f58', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
-                    y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' }, min: 50,
-                    max: 105 }
-                },
-                animation: { duration: 300 }
-            }
-        });
-
-        // ============================================================
-        // ПОЛУЧЕНИЕ ДАННЫХ С СЕРВЕРА
-        // ============================================================
-        async function fetchData() {
-            try {
-                const response = await fetch(API_URL + '?action=get_last');
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                const data = await response.json();
-                if (data && data.T0 !== undefined) {
-                    updateDisplay(data);
-                    updateChart(data);
-                }
-            } catch (err) {
-                console.log('Ожидание данных с сервера...');
-            }
-        }
-
-        // ============================================================
-        // ОБНОВЛЕНИЕ ЦИФРОВЫХ ПОКАЗАТЕЛЕЙ
-        // ============================================================
-        function updateDisplay(d) {
-            currentData = d;
-
-            // Температуры
-            document.getElementById('valT0').textContent = d.T0 !== undefined ? d.T0.toFixed(1) : '--';
-            document.getElementById('valT1').textContent = d.T1 !== undefined ? d.T1.toFixed(1) : '--';
-            document.getElementById('valT2').textContent = d.T2 !== undefined ? d.T2.toFixed(1) : '--';
-            document.getElementById('valT3').textContent = d.T3 !== undefined ? d.T3.toFixed(1) : '--';
-
-            // Давление
-            document.getElementById('valPressure').textContent = d.pressure !== undefined ? d.pressure :
-                '--';
-            document.getElementById('valDP').textContent = d.dp !== undefined ? d.dp : '--';
-            document.getElementById('valH2O').textContent = d.h2o !== undefined ? d.h2o.toFixed(1) : '--';
-            document.getElementById('valEtOH').textContent = d.etoh !== undefined ? d.etoh.toFixed(1) :
-                '--';
-
-            // Регулятор
-            document.getElementById('valU').textContent = d.U !== undefined ? d.U + ' В' : '-- В';
-            document.getElementById('valI').textContent = d.I !== undefined ? d.I + ' В' : '-- В';
-            document.getElementById('valPower').textContent = d.power !== undefined ? d.power + '%' :
-                '--%';
-
-            // Обновление слайдера
-            if (d.I !== undefined) {
-                document.getElementById('powerSlider').value = d.I;
-                document.getElementById('powerValue').textContent = d.I + ' В';
-            }
-
-            // Режим
-            updateModeBadge(d.mode);
-            updateStatusDot(d.mode);
-
-            // Таймер работы
-            updateClock();
-        }
-
-        // ============================================================
-        // ОБНОВЛЕНИЕ ГРАФИКА
-        // ============================================================
-        function updateChart(d) {
-            const now = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit',
-                second: '2-digit' });
-            chartLabels.push(now);
-            chartT0.push(d.T0 || 0);
-            chartT1.push(d.T1 || 0);
-            chartT2.push(d.T2 || 0);
-            chartT3.push(d.T3 || 0);
-
-            if (chartLabels.length > 60) {
-                chartLabels.shift();
-                chartT0.shift();
-                chartT1.shift();
-                chartT2.shift();
-                chartT3.shift();
-            }
-            tempChart.update();
-        }
-
-        // ============================================================
-        // ИНДИКАТОР РЕЖИМА
-        // ============================================================
-        function updateModeBadge(mode) {
-            const badge = document.getElementById('valMode');
-            const modes = {
-                'heat': { text: 'Разгон', cls: 'mode-heat' },
-                'stab': { text: 'Стабилизация', cls: 'mode-stab' },
-                'sel': { text: 'Отбор', cls: 'mode-sel' },
-                'stop': { text: 'Остановлен', cls: 'mode-stop' }
-            };
-            const m = modes[mode] || { text: 'Нет данных', cls: 'mode-stop' };
-            badge.textContent = m.text;
-            badge.className = 'mode-badge ' + m.cls;
-            document.getElementById('statusText').textContent = m.text;
-        }
-
-        function updateStatusDot(mode) {
-            const dot = document.getElementById('statusDot');
-            dot.className = 'status-dot';
-            if (mode === 'stop') dot.classList.add('warning');
-        }
-
-        function updateClock() {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const h = Math.floor(elapsed / 3600);
-            const m = Math.floor((elapsed % 3600) / 60);
-            const s = elapsed % 60;
-            document.getElementById('clock').textContent =
-                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2,
-                '0');
-        }
-
-        // ============================================================
-        // ОТПРАВКА КОМАНД
-        // ============================================================
-        function sendCommand(cmd) {
-            console.log('Отправка команды:', cmd);
-            fetch(API_URL + '?action=send_command&cmd=' + encodeURIComponent(cmd))
-                .then(r => r.json())
-                .then(r => console.log('Ответ сервера:', r))
-                .catch(e => console.error('Ошибка отправки команды:', e));
-        }
-
-        function updatePowerSlider(val) {
-            document.getElementById('powerValue').textContent = val + ' В';
-            sendCommand('SET_POWER:' + val);
-        }
-
-        // ============================================================
-        // МОДАЛЬНЫЕ ОКНА
-        // ============================================================
         function openModal(id) { document.getElementById(id).classList.add('show'); }
 
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
         document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e
                 .target === o) closeModal(o.id); }));
 
-        // ============================================================
-        // ЗАПУСК
-        // ============================================================
-        fetchData(); // первый запрос сразу
-        setInterval(fetchData, 1000); // затем каждую секунду
-    </script>
+        let sensorHistory = { T0: [], T1: [], T2: [], T3: [], P: [], dP: [], H2O: [], EtOH: [] };
+        let sensorChart = null;
+        let currentSensor = 'T0';
+
+        function openSensorModal(sensor) {
+            currentSensor = sensor;
+            const titles = { T0: 'Куб T0', T1: 'Царга низ T1', T2: 'Царга верх T2', T3: 'Вода T3',
+                P: 'Атмосферное давление', dP: 'Дифф. давление', H2O: 'H₂O кипения',
+            EtOH: 'Спирт кипения' };
+            const units = { T0: '°C', T1: '°C', T2: '°C', T3: '°C', P: 'мм рт.ст.', dP: 'Па',
+                H2O: '°C', EtOH: '°C' };
+            document.getElementById('sensorModalTitle').textContent = '📊 ' + titles[sensor];
+            const hist = sensorHistory[sensor];
+            if (hist.length > 0) {
+                document.getElementById('sensorCurrent').textContent = hist[hist.length - 1].toFixed(1) +
+                    ' ' + units[sensor];
+                document.getElementById('sensorMin').textContent = Math.min(...hist).toFixed(1) + ' ' +
+                    units[sensor];
+                document.getElementById('sensorMax').textContent = Math.max(...hist).toFixed(1) + ' ' +
+                    units[sensor];
+                document.getElementById('sensorAvg').textContent = (hist.reduce((a, b) => a + b, 0) / hist
+                    .length).toFixed(1) + ' ' + units[sensor];
+            }
+            if (sensorChart) sensorChart.destroy();
+            const ctx = document.getElementById('sensorChart').getContext('2d');
+            sensorChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: hist.map((_, i) => i), datasets: [{ data: hist,
+                        borderColor: '#58a6ff', backgroundColor: '#58a6ff22', tension: 0.3,
+                        pointRadius: 0, borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { ticks: { color: '#484f58' },
+                        grid: { color: '#21262d' } } } },
+            animation: { duration: 200 }
+        });
+        openModal('sensorModal');
+    }
+
+    function saveSensorConfig() { closeModal('sensorModal'); }
+
+    function addToHistory(sensor, value) { sensorHistory[sensor].push(value); if (sensorHistory[sensor].length >
+            500) sensorHistory[sensor].shift(); }
+
+    let currentMode = 'stab',
+        currentPower = 180,
+        elapsedSeconds = 0;
+    let simData = { T0: 78.3, T1: 79.0, T2: 98.8, T3: 55.0, pressure: 755, dp: 12, U: 220, I: 180,
+        power: 72, h2o: 99.8, etoh: 78.3 };
+    let timeWindowMinutes = 5;
+    let allData = [];
+    let tempChart, pressureChart, xgapChart;
+
+    function initCharts() {
+        const tempCtx = document.getElementById('tempChart').getContext('2d');
+        tempChart = new Chart(tempCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                    { label: 'T0', data: [], borderColor: '#f85149',
+                        backgroundColor: '#f8514922', tension: 0.3, pointRadius: 0,
+                    borderWidth: 2 },
+                    { label: 'T1', data: [], borderColor: '#f0883e',
+                        backgroundColor: '#f0883e22', tension: 0.3, pointRadius: 0,
+                    borderWidth: 2 },
+                    { label: 'T2', data: [], borderColor: '#f0c040',
+                        backgroundColor: '#f0c04022', tension: 0.3, pointRadius: 0,
+                    borderWidth: 2.5 },
+                    { label: 'T3', data: [], borderColor: '#58a6ff',
+                        backgroundColor: '#58a6ff22', tension: 0.3, pointRadius: 0,
+                    borderWidth: 2 }
+                ] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
+                            pinch: { enabled: true }, mode: 'y' } } },
+                scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 },
+                        grid: { color: '#21262d' } }, y: { ticks: { color: '#484f58' },
+                        grid: { color: '#21262d' }, min: 50, max: 105 } },
+            animation: { duration: 300 }
+        }
+    });
+
+    const pressCtx = document.getElementById('pressureChart').getContext('2d');
+    pressureChart = new Chart(pressCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ data: [], borderColor: '#bc8cff',
+                backgroundColor: '#bc8cff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
+                label: 'P' }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
+                        pinch: { enabled: true }, mode: 'y' } } },
+            scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
+                y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } },
+        animation: { duration: 300 }
+    }
+});
+
+const xgapCtx = document.getElementById('xgapChart').getContext('2d');
+xgapChart = new Chart(xgapCtx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ data: [], borderColor: '#79c0ff',
+            backgroundColor: '#79c0ff22', tension: 0.3, pointRadius: 0, borderWidth: 2,
+            label: 'dP' }] },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false }, zoom: { zoom: { wheel: { enabled: true },
+                    pinch: { enabled: true }, mode: 'y' } } },
+        scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 8 }, grid: { color: '#21262d' } },
+            y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } },
+    animation: { duration: 300 }
+}
+});
+}
+
+function setTimeWindow(minutes) {
+timeWindowMinutes = minutes;
+document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+event.target.classList.add('active');
+updateAllCharts();
+}
+
+function toggleDataset(index, chartName) {
+const chart = chartName === 'temp' ? tempChart : (chartName === 'pressure' ? pressureChart :
+    xgapChart);
+if (chart.isDatasetVisible(index)) chart.hide(index);
+else chart.show(index);
+chart.update();
+}
+
+function toggleChartCard(cardId) {
+const card = document.getElementById(cardId);
+card.style.display = card.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateAllCharts() {
+const cutoff = Date.now() - timeWindowMinutes * 60 * 1000;
+const filtered = allData.filter(d => d.time >= cutoff);
+const labels = filtered.map(d => d.label);
+tempChart.data.labels = labels;
+tempChart.data.datasets[0].data = filtered.map(d => d.T0);
+tempChart.data.datasets[1].data = filtered.map(d => d.T1);
+tempChart.data.datasets[2].data = filtered.map(d => d.T2);
+tempChart.data.datasets[3].data = filtered.map(d => d.T3);
+tempChart.update();
+pressureChart.data.labels = labels;
+pressureChart.data.datasets[0].data = filtered.map(d => d.P);
+pressureChart.update();
+xgapChart.data.labels = labels;
+xgapChart.data.datasets[0].data = filtered.map(d => d.dP);
+xgapChart.update();
+}
+
+function simulateData() {
+elapsedSeconds++;
+if (currentMode === 'heat') { simData.T0 += 0.02 + Math.random() * 0.03;
+    simData.T1 += 0.015 + Math.random() * 0.025;
+    simData.T2 += 0.01 + Math.random() * 0.02; } else { simData.T0 += (Math.random() - 0.5) * 0.04;
+    simData.T1 += (Math.random() - 0.5) * 0.03;
+    simData.T2 = 98.8 + (Math.random() - 0.5) * 0.3; }
+simData.T3 = 55.0 + (Math.random() - 0.5) * 1.5;
+simData.pressure = Math.round(754 + Math.random() * 2);
+simData.dp = Math.round(11 + Math.random() * 2);
+simData.h2o = +(99.8 + (Math.random() - 0.5) * 0.1).toFixed(1);
+simData.etoh = +(78.3 - (760 - simData.pressure) * 0.03).toFixed(1);
+simData.U = 219 + Math.round(Math.random() * 2);
+simData.I = currentPower;
+simData.power = Math.round((currentPower / 250) * 100);
+simData.T0 = Math.min(85, Math.max(20, simData.T0));
+simData.T1 = Math.min(85, Math.max(20, simData.T1));
+simData.T2 = Math.min(105, Math.max(20, simData.T2));
+simData.T3 = Math.min(65, Math.max(30, simData.T3));
+addToHistory('T0', simData.T0);
+addToHistory('T1', simData.T1);
+addToHistory('T2', simData.T2);
+addToHistory('T3', simData.T3);
+addToHistory('P', simData.pressure);
+addToHistory('dP', simData.dp);
+addToHistory('H2O', simData.h2o);
+addToHistory('EtOH', simData.etoh);
+let t = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+allData.push({ time: Date.now(), label: t, T0: +simData.T0.toFixed(1), T1: +simData.T1.toFixed(1),
+    T2: +simData.T2.toFixed(1), T3: +simData.T3.toFixed(1), P: simData.pressure, dP: simData
+    .dp });
+if (allData.length > 3000) allData.shift();
+updateAllCharts();
+}
+
+function updateUI() {
+document.getElementById('valT0').textContent = simData.T0.toFixed(1);
+document.getElementById('valT1').textContent = simData.T1.toFixed(1);
+document.getElementById('valT2').textContent = simData.T2.toFixed(1);
+document.getElementById('valT3').textContent = simData.T3.toFixed(1);
+document.getElementById('valPressure').textContent = simData.pressure;
+document.getElementById('valDP').textContent = simData.dp;
+document.getElementById('valH2O').textContent = simData.h2o;
+document.getElementById('valEtOH').textContent = simData.etoh;
+document.getElementById('valU').textContent = simData.U + ' В';
+document.getElementById('valI').textContent = simData.I + ' В';
+document.getElementById('valPower').textContent = simData.power + '%';
+let st = '',
+    mc = '',
+    dc = '';
+switch (currentMode) { case 'heat':
+        st = 'Разгон';
+        mc = 'mode-heat';
+        break; case 'stab':
+        st = 'Стабилизация';
+        mc = 'mode-stab';
+        break; case 'sel':
+        st = 'Отбор';
+        mc = 'mode-sel';
+        break; case 'stop':
+        st = 'Остановлен';
+        mc = 'mode-stop';
+        dc = 'warning';
+        break; }
+document.getElementById('statusText').textContent = st;
+document.getElementById('valMode').textContent = st;
+document.getElementById('valMode').className = 'mode-badge ' + mc;
+document.getElementById('statusDot').className = 'status-dot ' + dc;
+let h = Math.floor(elapsedSeconds / 3600),
+    m = Math.floor((elapsedSeconds % 3600) / 60),
+    s = elapsedSeconds % 60;
+document.getElementById('clock').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2,
+    '0') + ':' + String(s).padStart(2, '0');
+}
+
+function setMode(m) { currentMode = m;
+    document.querySelectorAll('.btn-row .btn').forEach(b => b.classList.remove('active')); if (m === 'heat')
+        document.querySelector('.btn-row .btn:nth-child(1)').classList.add('active'); if (m === 'stab')
+        document.querySelector('.btn-row .btn:nth-child(2)').classList.add('active'); if (m === 'sel')
+        document.querySelector('.btn-row .btn:nth-child(3)').classList.add('active'); }
+
+function updatePower(v) { currentPower = parseInt(v);
+    simData.I = currentPower;
+    simData.power = Math.round((currentPower / 250) * 100);
+    document.getElementById('powerValue').textContent = v + ' В'; }
+
+initCharts();
+setInterval(() => { simulateData();
+    updateUI(); }, 1000);
+updateUI();
+</script>
 </body>
 </html>
